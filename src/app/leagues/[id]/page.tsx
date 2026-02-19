@@ -2,10 +2,10 @@
 import { syncMatches } from '@/lib/matchService';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import PredictionForm from './PredictionForm';
+import PredictionForm from '@/components/PredictionForm';
 import { createClient } from '@/lib/supabase/server';
 
-export default async function LeagueDetailsPage({ params }: { params: Promise<{ id: string }> | any }) {
+export default async function LeagueDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
