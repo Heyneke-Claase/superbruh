@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import PredictionForm from '@/components/PredictionForm';
 import { createClient } from '@/lib/supabase/server';
+import ReactCountryFlag from 'react-country-flag';
+import { getCountryCode } from '@/lib/countryMap';
 
 export default async function LeagueDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -42,8 +44,8 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
     <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0">
-          <Link href="/leagues" className="text-yellow-400 hover:underline">← Back to Leagues</Link>
-          <Link href={`/leagues/${id}/leaderboard`} className="bg-slate-800 px-4 py-2 rounded-lg font-bold hover:bg-slate-700 w-full md:w-auto text-center">Leaderboard</Link>
+          <Link href="/leagues" prefetch={true} className="text-yellow-400 hover:underline">← Back to Leagues</Link>
+          <Link href={`/leagues/${id}/leaderboard`} prefetch={true} className="bg-slate-800 px-4 py-2 rounded-lg font-bold hover:bg-slate-700 w-full md:w-auto text-center">Leaderboard</Link>
         </div>
 
         <header className="space-y-2 text-center md:text-left">
@@ -72,9 +74,15 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
                     })}
                   </div>
                   <div className="flex items-center justify-center md:justify-start gap-4">
-                    <span className="text-xl font-bold">{match.team1}</span>
+                    <span className="text-xl font-bold flex items-center gap-2">
+                      {getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />}
+                      {match.team1}
+                    </span>
                     <span className="text-slate-600 font-black italic">VS</span>
-                    <span className="text-xl font-bold">{match.team2}</span>
+                    <span className="text-xl font-bold flex items-center gap-2">
+                      {match.team2}
+                      {getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />}
+                    </span>
                   </div>
                   <div className="text-sm text-slate-500 mt-2 italic">{match.venue}</div>
                 </div>
@@ -98,7 +106,11 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
               <div key={match.id} className="bg-slate-900 p-6 rounded-xl border border-slate-800 opacity-75 grayscale-[0.5]">
                 <div className="flex justify-between items-center">
                    <div>
-                      <div className="text-xl font-bold">{match.team1} vs {match.team2}</div>
+                      <div className="text-xl font-bold flex items-center gap-2">
+                        {getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />}
+                        {match.team1} vs {match.team2}
+                        {getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />}
+                      </div>
                       <div className="text-sm text-yellow-400 font-bold uppercase">Winner: {match.winner || 'TBA'}</div>
                    </div>
                    <div className="text-right">

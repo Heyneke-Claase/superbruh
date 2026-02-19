@@ -22,7 +22,7 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ id
     <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0">
-          <Link href={`/leagues/${id}`} className="text-yellow-400 hover:underline">← Back to Fixtures</Link>
+          <Link href={`/leagues/${id}`} prefetch={true} className="text-yellow-400 hover:underline">← Back to Fixtures</Link>
           <div className="text-slate-500 font-bold uppercase tracking-widest text-sm">Leaderboard</div>
         </div>
 
