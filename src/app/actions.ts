@@ -56,10 +56,16 @@ export async function joinLeague(formData: FormData) {
 
   if (!league) return;
 
-  await supabase.from('Membership').upsert(
-    { userId, leagueId: league.id },
-    { onConflict: 'userId,leagueId' }
-  );
+  const { data: existing } = await supabase
+    .from('Membership')
+    .select('id')
+    .eq('userId', userId)
+    .eq('leagueId', league.id)
+    .single();
+
+  if (!existing) {
+    await supabase.from('Membership').insert({ userId, leagueId: league.id });
+  }
 
   redirect(`/leagues/${league.id}`);
 }

@@ -20,10 +20,10 @@ export default async function LeaguesPage() {
   if (!dbUser) redirect('/');
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-8">
-      <div className="max-w-4xl mx-auto space-y-12">
-        <header className="flex justify-between items-center bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
-          <h1 className="text-4xl font-black italic text-yellow-400 uppercase tracking-tighter">
+    <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8">
+      <div className="max-w-4xl mx-auto space-y-8 md:space-y-12">
+        <header className="flex flex-col md:flex-row justify-between items-center bg-slate-900/50 p-6 rounded-2xl border border-slate-800 gap-6 md:gap-0">
+          <h1 className="text-4xl font-black italic text-yellow-400 uppercase tracking-tighter text-center md:text-left">
             Your Leagues
           </h1>
           <div className="flex items-center gap-4">

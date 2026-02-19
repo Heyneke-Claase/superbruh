@@ -39,14 +39,14 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
   const predictionMap = new Map<string, string>((userPredictions || []).map((p: any) => [p.matchId, p.predictedWinner]));
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-8">
+    <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-8">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0">
           <Link href="/leagues" className="text-yellow-400 hover:underline">← Back to Leagues</Link>
-          <Link href={`/leagues/${id}/leaderboard`} className="bg-slate-800 px-4 py-2 rounded-lg font-bold hover:bg-slate-700">Leaderboard</Link>
+          <Link href={`/leagues/${id}/leaderboard`} className="bg-slate-800 px-4 py-2 rounded-lg font-bold hover:bg-slate-700 w-full md:w-auto text-center">Leaderboard</Link>
         </div>
 
-        <header className="space-y-2">
+        <header className="space-y-2 text-center md:text-left">
           <h1 className="text-4xl font-black italic text-yellow-400 uppercase tracking-tighter">
             {league.name}
           </h1>
