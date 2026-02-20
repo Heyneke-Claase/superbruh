@@ -6,6 +6,7 @@ import PredictionForm from '@/components/PredictionForm';
 import { createClient } from '@/lib/supabase/server';
 import ReactCountryFlag from 'react-country-flag';
 import { getCountryCode } from '@/lib/countryMap';
+import MatchInfo from '@/components/MatchInfo';
 
 export default async function LeagueDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -15,7 +16,7 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
   if (!userId) redirect('/');
 
   // Sync matches to ensure we have latest data
-  await syncMatches();
+  // await syncMatches(); // Removed to speed up page load. Sync should be done via a cron job or separate admin action.
 
   const { data: league } = await supabase
     .from('League')
@@ -45,7 +46,10 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0">
           <Link href="/leagues" prefetch={true} className="text-yellow-400 hover:underline">← Back to Leagues</Link>
-          <Link href={`/leagues/${id}/leaderboard`} prefetch={true} className="bg-slate-800 px-4 py-2 rounded-lg font-bold hover:bg-slate-700 w-full md:w-auto text-center">Leaderboard</Link>
+          <div className="flex gap-2 w-full md:w-auto">
+            <Link href={`/leagues/${id}/picks`} prefetch={true} className="bg-slate-800 px-4 py-2 rounded-lg font-bold hover:bg-slate-700 flex-1 text-center">All Picks</Link>
+            <Link href={`/leagues/${id}/leaderboard`} prefetch={true} className="bg-slate-800 px-4 py-2 rounded-lg font-bold hover:bg-slate-700 flex-1 text-center">Leaderboard</Link>
+          </div>
         </div>
 
         <header className="space-y-2 text-center md:text-left">
@@ -55,6 +59,15 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
           <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">
             Invite Code: <span className="text-slate-300">{league.inviteCode}</span>
           </p>
+          <div className="flex flex-wrap gap-2 pt-2 justify-center md:justify-start">
+            <span className="text-xs font-bold text-slate-500 uppercase flex items-center mr-2">{league.members?.length || 0} Members:</span>
+            {(league.members as any[] || []).map((m: any) => (
+              <div key={m.id} className="flex items-center gap-2 bg-slate-800/50 px-3 py-1.5 rounded-full border border-slate-700/50">
+                {m.user.image && <img src={m.user.image} alt="" className="w-5 h-5 rounded-full" />}
+                <span className="text-xs font-bold text-slate-300">{m.user.name}</span>
+              </div>
+            ))}
+          </div>
         </header>
 
         <div className="space-y-6">
@@ -63,7 +76,7 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
             {(matches || []).filter((m: any) => !m.matchEnded).map((match: any) => (
               <div key={match.id} className="bg-slate-900 p-6 rounded-xl border border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6">
                 <div className="flex-1 text-center md:text-left">
-                  <div className="text-xs text-slate-500 font-bold uppercase mb-2">
+                  <div suppressHydrationWarning className="text-xs text-slate-500 font-bold uppercase mb-2">
                     {new Date(match.dateTimeGMT).toLocaleString('en-ZA', { 
                       weekday: 'short', 
                       day: 'numeric', 
@@ -83,6 +96,9 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
                       {match.team2}
                       {getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />}
                     </span>
+                    <div className="ml-2">
+                      <MatchInfo matchId={match.id} team1={match.team1} team2={match.team2} />
+                    </div>
                   </div>
                   <div className="text-sm text-slate-500 mt-2 italic">{match.venue}</div>
                 </div>
@@ -110,6 +126,7 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
                         {getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />}
                         {match.team1} vs {match.team2}
                         {getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />}
+                        <MatchInfo matchId={match.id} team1={match.team1} team2={match.team2} />
                       </div>
                       <div className="text-sm text-yellow-400 font-bold uppercase">Winner: {match.winner || 'TBA'}</div>
                    </div>

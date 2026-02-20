@@ -81,3 +81,17 @@ export async function predictMatch(matchId: string, winner: string) {
   );
 }
 
+export async function getMatchInfo(matchId: string) {
+  const API_KEY = '0d758f82-8029-4904-8339-a19df7e9edd3';
+  const url = `https://api.cricapi.com/v1/match_info?apikey=${API_KEY}&id=${matchId}`;
+  
+  try {
+    const res = await fetch(url, { next: { revalidate: 60 } }); // Cache for 1 minute
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching match info:', error);
+    return { status: 'failure', reason: 'Failed to fetch match info' };
+  }
+}
+
