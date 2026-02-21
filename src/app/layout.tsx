@@ -17,6 +17,12 @@ export const metadata: Metadata = {
   description: "The ultimate T20 World Cup fantasy league",
 };
 
+export const viewport = {
+  themeColor: '#facc15',
+  width: 'device-width',
+  initialScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{

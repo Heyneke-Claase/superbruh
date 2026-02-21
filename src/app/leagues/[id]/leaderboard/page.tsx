@@ -9,14 +9,13 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ id
 
   const { data: league } = await supabase
     .from('League')
-    .select('*, members:Membership(*, user:User(*))')
+    .select('id, name, members:Membership(id, userId, points, user:User(id, name, image))')
     .eq('id', id)
     .single();
 
   if (!league) redirect('/leagues');
 
-  // Sort members by points descending manually since Supabase complex query sorting can be tricky with nested relates
-  const sortedMembers = (league.members as any[] || []).sort((a, b) => b.points - a.points);
+  const sortedMembers = (league.members as any[] || []).sort((a: any, b: any) => b.points - a.points);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8">

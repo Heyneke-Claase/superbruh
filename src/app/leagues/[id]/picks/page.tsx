@@ -12,56 +12,68 @@ export default async function PicksPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: league } = await supabase
-    .from('League')
-    .select('*, members:Membership(*, user:User(*))')
-    .eq('id', id)
-    .single();
+  // Fetch auth + league in parallel
+  const [{ data: { user } }, { data: league }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from('League')
+      .select('id, name, members:Membership(id, userId, user:User(id, name, image))')
+      .eq('id', id)
+      .single(),
+  ]);
 
   if (!league) redirect('/leagues');
-
-  const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/');
   const currentUserId = user.id;
 
-  const memberUserIds = (league.members as any[] || []).map(m => m.userId);
+  const memberUserIds = (league.members as any[] || []).map((m: any) => m.userId);
 
-  const { data: matches } = await supabase
-    .from('Match')
-    .select('*')
-    .ilike('seriesName', '%World Cup%')
-    .not('team1', 'ilike', '%U19%')
-    .not('team2', 'ilike', '%U19%')
-    .order('dateTimeGMT', { ascending: true });
+  // Fetch matches + predictions in parallel
+  const [{ data: matches }, { data: allPredictions }] = await Promise.all([
+    supabase
+      .from('Match')
+      .select('id, team1, team2, dateTimeGMT, status, winner, matchStarted, matchEnded')
+      .ilike('seriesName', '%World Cup%')
+      .not('team1', 'ilike', '%U19%')
+      .not('team2', 'ilike', '%U19%')
+      .order('dateTimeGMT', { ascending: true }),
+    supabase
+      .from('Prediction')
+      .select('matchId, userId, predictedWinner')
+      .in('userId', memberUserIds),
+  ]);
 
-  const { data: allPredictions } = await supabase
-    .from('Prediction')
-    .select('*')
-    .in('userId', memberUserIds);
+  // Build O(1) nested lookup: matchId -> userId -> predictedWinner
+  const pickMap = new Map<string, Map<string, string>>();
+  for (const p of (allPredictions || []) as any[]) {
+    if (!pickMap.has(p.matchId)) pickMap.set(p.matchId, new Map());
+    pickMap.get(p.matchId)!.set(p.userId, p.predictedWinner);
+  }
 
   const activeMatch = (matches || []).find((m: any) => !m.matchEnded) || (matches || [])[(matches || []).length - 1];
   const activeMatchId = activeMatch?.id;
 
   const getPick = (match: any, userId: string) => {
-    const currentUserPick = (allPredictions || []).find((p: any) => p.matchId === match.id && p.userId === currentUserId);
-    const targetUserPick = (allPredictions || []).find((p: any) => p.matchId === match.id && p.userId === userId);
-    
+    const matchPicks = pickMap.get(match.id);
+    const currentUserPick = matchPicks?.get(currentUserId);
+    const targetUserPick = matchPicks?.get(userId);
+
     // Always show your own pick to yourself
     if (userId === currentUserId) {
-      if (targetUserPick) return targetUserPick.predictedWinner;
+      if (targetUserPick) return targetUserPick;
       if (match.matchStarted) return 'No Pick';
       return 'Hidden';
     }
 
     // Show others' picks if match started
     if (match.matchStarted) {
-      if (targetUserPick) return targetUserPick.predictedWinner;
+      if (targetUserPick) return targetUserPick;
       return 'No Pick';
     }
 
     // For others' picks before match starts, only show if BOTH have picked
     if (currentUserPick && targetUserPick) {
-      return targetUserPick.predictedWinner;
+      return targetUserPick;
     }
 
     return 'Hidden';

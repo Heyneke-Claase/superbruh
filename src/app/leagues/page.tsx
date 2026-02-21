@@ -13,7 +13,7 @@ export default async function LeaguesPage() {
 
   const { data: dbUser } = await supabase
     .from('User')
-    .select('*, leagues:Membership(*, league:League(*))')
+    .select('id, name, image, leagues:Membership(id, league:League(id, name, inviteCode))')
     .eq('id', userId)
     .single();
 

@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { syncMatches } from '@/lib/matchService';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import PredictionForm from '@/components/PredictionForm';
@@ -14,41 +13,43 @@ import { getActualMargin } from '@/lib/matchService';
 export default async function LeagueDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+
+  // Run auth + league fetch in parallel
+  const [{ data: { user } }, { data: league }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from('League')
+      .select('id, name, inviteCode, members:Membership(id, userId, joinedAt, user:User(id, name, image))')
+      .eq('id', id)
+      .single(),
+  ]);
+
   const userId = user?.id;
   if (!userId) redirect('/');
-
-  // Sync matches to ensure we have latest data
-  // await syncMatches(); // Removed to speed up page load. Sync should be done via a cron job or separate admin action.
-
-  const { data: league } = await supabase
-    .from('League')
-    .select('*, members:Membership(*, user:User(*))')
-    .eq('id', id)
-    .single();
-
   if (!league) redirect('/leagues');
 
   // Sort members by creation date to identify owner
-  const sortedMembers = (league.members as any[] || []).sort((a: any, b: any) => 
+  const sortedMembers = (league.members as any[] || []).sort((a: any, b: any) =>
     new Date(a.joinedAt || 0).getTime() - new Date(b.joinedAt || 0).getTime()
   );
-  
+
   const ownerId = sortedMembers[0]?.userId;
   const isOwner = userId === ownerId;
 
-  const { data: matches } = await supabase
-    .from('Match')
-    .select('*')
-    .ilike('seriesName', '%World Cup%')
-    .not('team1', 'ilike', '%U19%')
-    .not('team2', 'ilike', '%U19%')
-    .order('dateTimeGMT', { ascending: true });
-
-  const { data: userPredictions } = await supabase
-    .from('Prediction')
-    .select('*')
-    .eq('userId', userId);
+  // Run matches + predictions in parallel
+  const [{ data: matches }, { data: userPredictions }] = await Promise.all([
+    supabase
+      .from('Match')
+      .select('id, team1, team2, dateTimeGMT, status, matchType, venue, winner, matchStarted, matchEnded')
+      .ilike('seriesName', '%World Cup%')
+      .not('team1', 'ilike', '%U19%')
+      .not('team2', 'ilike', '%U19%')
+      .order('dateTimeGMT', { ascending: true }),
+    supabase
+      .from('Prediction')
+      .select('matchId, predictedWinner')
+      .eq('userId', userId),
+  ]);
 
   const predictionMap = new Map<string, string>((userPredictions || []).map((p: any) => [p.matchId, p.predictedWinner]));
 
