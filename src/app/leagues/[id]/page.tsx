@@ -108,13 +108,21 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
                   </div>
                   <div className="flex items-center justify-center md:justify-start gap-2 sm:gap-4">
                     <span className="text-base sm:text-xl font-bold flex items-center gap-1 sm:gap-2">
-                      {getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />}
+                      {match.team1 === 'West Indies' ? (
+                        <img src="https://purecatamphetamine.github.io/country-flag-icons/3x2/UM.svg" alt="WI" className="w-[1.2em] rounded-sm" />
+                      ) : (
+                        getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />
+                      )}
                       {match.team1}
                     </span>
                     <span className="text-slate-600 font-black italic text-sm sm:text-base">VS</span>
                     <span className="text-base sm:text-xl font-bold flex items-center gap-1 sm:gap-2">
                       {match.team2}
-                      {getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />}
+                      {match.team2 === 'West Indies' ? (
+                        <img src="https://purecatamphetamine.github.io/country-flag-icons/3x2/UM.svg" alt="WI" className="w-[1.2em] rounded-sm" />
+                      ) : (
+                        getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />
+                      )}
                     </span>
                     <div className="ml-1 sm:ml-2">
                       <MatchInfo matchId={match.id} team1={match.team1} team2={match.team2} />
@@ -142,9 +150,17 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
               <div key={match.id} className="bg-slate-900 p-6 rounded-xl border border-slate-800 opacity-75 grayscale-[0.5] flex flex-col md:flex-row justify-between items-center gap-6">
                 <div className="flex-1 text-center md:text-left">
                   <div className="text-base sm:text-xl font-bold flex items-center justify-center md:justify-start gap-1 sm:gap-2">
-                    {getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />}
+                    {match.team1 === 'West Indies' ? (
+                      <img src="https://purecatamphetamine.github.io/country-flag-icons/3x2/UM.svg" alt="WI" className="w-[1.2em] rounded-sm" />
+                    ) : (
+                      getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />
+                    )}
                     {match.team1} vs {match.team2}
-                    {getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />}
+                    {match.team2 === 'West Indies' ? (
+                      <img src="https://purecatamphetamine.github.io/country-flag-icons/3x2/UM.svg" alt="WI" className="w-[1.2em] rounded-sm" />
+                    ) : (
+                      getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />
+                    )}
                     <div className="ml-1 sm:ml-2">
                       <MatchInfo matchId={match.id} team1={match.team1} team2={match.team2} />
                     </div>

@@ -7,7 +7,7 @@ export const getCountryCode = (teamName: string): string => {
     'New Zealand': 'NZ',
     'Pakistan': 'PK',
     'Sri Lanka': 'LK',
-    'West Indies': '', // No single ISO code for West Indies
+    'West Indies': 'UM', // Using UM (US Minor Outlying Islands) as a visual fallback for WI flag
     'Bangladesh': 'BD',
     'Afghanistan': 'AF',
     'Ireland': 'IE',
