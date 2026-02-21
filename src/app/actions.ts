@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { updatePoints } from '@/lib/matchService';
 
 async function getUserId() {
   const supabase = await createClient();
@@ -114,6 +115,9 @@ export async function predictMatch(matchId: string, winner: string) {
     { userId, matchId, predictedWinner: winner },
     { onConflict: 'userId,matchId' }
   );
+
+  // Update points instantly for this user in case they are predicting an old match
+  await updatePoints(userId);
 }
 
 export async function removeMember(leagueId: string, targetUserId: string) {

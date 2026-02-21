@@ -25,6 +25,11 @@ export async function syncMatches() {
         continue;
       }
       
+      let winner = m.winner || null;
+      if (!winner && m.status && m.status.includes(' won by ')) {
+        winner = m.status.split(' won by ')[0];
+      }
+      
       const matchData = {
         id: m.id,
         team1: m.teams[0],
@@ -34,7 +39,7 @@ export async function syncMatches() {
         status: m.status,
         matchType: m.matchType,
         venue: m.venue,
-        winner: m.winner || null,
+        winner: winner,
         matchStarted: m.matchStarted,
         matchEnded: m.matchEnded,
       };
@@ -81,7 +86,7 @@ export function getActualMargin(status: string | null): string | null {
   return null;
 }
 
-export async function updatePoints() {
+export async function updatePoints(userId?: string) {
   const supabase = await createClient();
 
   // Get all finished matches
@@ -92,10 +97,13 @@ export async function updatePoints() {
 
   if (!finishedMatches) return;
 
-  // Get all memberships
-  const { data: memberships } = await supabase
-    .from('Membership')
-    .select('id, userId');
+  // Get memberships
+  let query = supabase.from('Membership').select('id, userId');
+  if (userId) {
+    query = query.eq('userId', userId);
+  }
+  
+  const { data: memberships } = await query;
 
   if (!memberships) return;
 

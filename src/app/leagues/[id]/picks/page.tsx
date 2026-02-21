@@ -133,6 +133,12 @@ export default async function PicksPage({ params }: { params: Promise<{ id: stri
                   const isCorrectMargin = isCorrectTeam && pickMargin === actualMargin;
                   const isWrongTeam = match.matchEnded && pickTeam !== match.winner && pick !== 'No Pick' && pick !== 'Hidden';
                   
+                  let pointsScored = 0;
+                  if (match.matchEnded && pick !== 'Hidden' && pick !== 'No Pick') {
+                    if (isCorrectTeam) pointsScored += 1;
+                    if (isCorrectMargin) pointsScored += 1;
+                  }
+                  
                   return (
                     <div key={m.id} className="bg-slate-800/50 p-3 rounded-lg flex items-center justify-between border border-slate-700/50">
                       <div className="flex items-center gap-2">
@@ -159,6 +165,11 @@ export default async function PicksPage({ params }: { params: Promise<{ id: stri
                               : 'text-slate-400'
                           }`}>
                             {pickMargin}
+                          </div>
+                        )}
+                        {match.matchEnded && pick !== 'Hidden' && pick !== 'No Pick' && (
+                          <div className="text-[10px] font-black text-yellow-400 mt-0.5 bg-yellow-400/10 px-1.5 py-0.5 rounded">
+                            +{pointsScored} PT{pointsScored !== 1 ? 'S' : ''}
                           </div>
                         )}
                       </div>
