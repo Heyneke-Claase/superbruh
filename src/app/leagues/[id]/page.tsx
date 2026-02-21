@@ -109,7 +109,7 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
                   <div className="flex items-center justify-center md:justify-start gap-2 sm:gap-4">
                     <span className="text-base sm:text-xl font-bold flex items-center gap-1 sm:gap-2">
                       {match.team1 === 'West Indies' ? (
-                        <img src="https://purecatamphetamine.github.io/country-flag-icons/3x2/UM.svg" alt="WI" className="w-[1.2em] rounded-sm" />
+                        <img src="https://upload.wikimedia.org/wikipedia/en/9/9b/Cricket_West_Indies_logo.svg" alt="WI" className="w-[1.2em] h-auto object-contain" />
                       ) : (
                         getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />
                       )}
@@ -119,7 +119,7 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
                     <span className="text-base sm:text-xl font-bold flex items-center gap-1 sm:gap-2">
                       {match.team2}
                       {match.team2 === 'West Indies' ? (
-                        <img src="https://purecatamphetamine.github.io/country-flag-icons/3x2/UM.svg" alt="WI" className="w-[1.2em] rounded-sm" />
+                        <img src="https://upload.wikimedia.org/wikipedia/en/9/9b/Cricket_West_Indies_logo.svg" alt="WI" className="w-[1.2em] h-auto object-contain" />
                       ) : (
                         getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />
                       )}
@@ -151,13 +151,13 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
                 <div className="flex-1 text-center md:text-left">
                   <div className="text-base sm:text-xl font-bold flex items-center justify-center md:justify-start gap-1 sm:gap-2">
                     {match.team1 === 'West Indies' ? (
-                      <img src="https://purecatamphetamine.github.io/country-flag-icons/3x2/UM.svg" alt="WI" className="w-[1.2em] rounded-sm" />
+                      <img src="https://upload.wikimedia.org/wikipedia/en/9/9b/Cricket_West_Indies_logo.svg" alt="WI" className="w-[1.2em] h-auto object-contain" />
                     ) : (
                       getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />
                     )}
                     {match.team1} vs {match.team2}
                     {match.team2 === 'West Indies' ? (
-                      <img src="https://purecatamphetamine.github.io/country-flag-icons/3x2/UM.svg" alt="WI" className="w-[1.2em] rounded-sm" />
+                      <img src="https://upload.wikimedia.org/wikipedia/en/9/9b/Cricket_West_Indies_logo.svg" alt="WI" className="w-[1.2em] h-auto object-contain" />
                     ) : (
                       getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />
                     )}
