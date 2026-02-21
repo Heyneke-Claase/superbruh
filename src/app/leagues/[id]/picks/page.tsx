@@ -6,6 +6,7 @@ import ReactCountryFlag from 'react-country-flag';
 import { getCountryCode } from '@/lib/countryMap';
 import MatchInfo from '@/components/MatchInfo';
 import ScrollToMatch from '@/components/ScrollToMatch';
+import { getActualMargin } from '@/lib/matchService';
 
 export default async function PicksPage({ params }: { params: Promise<{ id: string }> | any }) {
   const { id } = await params;
@@ -114,15 +115,23 @@ export default async function PicksPage({ params }: { params: Promise<{ id: stri
                   </div>
                 </div>
                 {match.matchEnded && (
-                  <div className="text-sm text-yellow-400 font-bold uppercase mt-2">Winner: {match.winner || 'TBA'}</div>
+                  <div className="text-sm text-yellow-400 font-bold uppercase mt-2">
+                    Winner: {match.winner || 'TBA'} 
+                    {match.winner && getActualMargin(match.status) && ` (${getActualMargin(match.status)})`}
+                  </div>
                 )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {(league.members as any[] || []).map((m: any) => {
                   const pick = getPick(match, m.userId);
-                  const isCorrect = match.matchEnded && pick === match.winner;
-                  const isWrong = match.matchEnded && pick !== match.winner && pick !== 'No Pick' && pick !== 'Hidden';
+                  const pickTeam = pick.split('|')[0];
+                  const pickMargin = pick.split('|')[1];
+                  
+                  const actualMargin = getActualMargin(match.status);
+                  const isCorrectTeam = match.matchEnded && pickTeam === match.winner;
+                  const isCorrectMargin = isCorrectTeam && pickMargin === actualMargin;
+                  const isWrongTeam = match.matchEnded && pickTeam !== match.winner && pick !== 'No Pick' && pick !== 'Hidden';
                   
                   return (
                     <div key={m.id} className="bg-slate-800/50 p-3 rounded-lg flex items-center justify-between border border-slate-700/50">
@@ -132,14 +141,26 @@ export default async function PicksPage({ params }: { params: Promise<{ id: stri
                         )}
                         <span className="font-bold text-sm truncate max-w-[100px]">{m.user.name}</span>
                       </div>
-                      <div className={`text-sm font-bold ${
-                        pick === 'Hidden' ? 'text-slate-500 italic' :
-                        pick === 'No Pick' ? 'text-red-500/50' :
-                        isCorrect ? 'text-green-500' :
-                        isWrong ? 'text-red-500' :
-                        'text-white'
-                      }`}>
-                        {pick}
+                      <div className="flex flex-col items-end">
+                        <div className={`text-sm font-bold ${
+                          pick === 'Hidden' ? 'text-slate-500 italic' :
+                          pick === 'No Pick' ? 'text-red-500/50' :
+                          isCorrectMargin ? 'text-green-400' :
+                          isCorrectTeam ? 'text-green-600' :
+                          isWrongTeam ? 'text-red-500' :
+                          'text-white'
+                        }`}>
+                          {pickTeam}
+                        </div>
+                        {pickMargin && pick !== 'Hidden' && pick !== 'No Pick' && (
+                          <div className={`text-[10px] uppercase font-bold tracking-wider ${
+                            match.matchEnded 
+                              ? (isCorrectMargin ? 'text-green-400' : 'text-red-500/70')
+                              : 'text-slate-400'
+                          }`}>
+                            {pickMargin}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

@@ -49,13 +49,41 @@ export async function syncMatches() {
   }
 }
 
+export function getActualMargin(status: string | null): string | null {
+  if (!status) return null;
+  
+  const runsMatch = status.match(/won by (\d+) runs?/i);
+  if (runsMatch) {
+    const runs = parseInt(runsMatch[1], 10);
+    if (runs <= 9) return 'Narrow';
+    if (runs <= 24) return 'Comfortable';
+    if (runs <= 39) return 'Easy';
+    return 'Thrashing';
+  }
+  
+  const wktsMatch = status.match(/won by (\d+) wkts?/i) || status.match(/won by (\d+) wickets?/i);
+  if (wktsMatch) {
+    const wkts = parseInt(wktsMatch[1], 10);
+    if (wkts <= 2) return 'Narrow';
+    if (wkts <= 5) return 'Comfortable';
+    if (wkts <= 8) return 'Easy';
+    return 'Thrashing';
+  }
+  
+  if (status.toLowerCase().includes('super over')) {
+    return 'Narrow';
+  }
+  
+  return null;
+}
+
 export async function updatePoints() {
   const supabase = await createClient();
 
   // Get all finished matches
   const { data: finishedMatches } = await supabase
     .from('Match')
-    .select('id, winner')
+    .select('id, winner, status')
     .eq('matchEnded', true);
 
   if (!finishedMatches) return;
@@ -79,8 +107,18 @@ export async function updatePoints() {
     if (predictions) {
       for (const pred of predictions) {
         const match = finishedMatches.find(m => m.id === pred.matchId);
-        if (match && match.winner === pred.predictedWinner) {
-          points += 1;
+        if (match) {
+          const predictedTeam = pred.predictedWinner?.split('|')[0];
+          const predictedMargin = pred.predictedWinner?.split('|')[1];
+          
+          if (match.winner === predictedTeam) {
+            points += 1; // 1 point for correct team
+            
+            const actualMargin = getActualMargin(match.status);
+            if (actualMargin && predictedMargin === actualMargin) {
+              points += 1; // 1 extra point for correct margin
+            }
+          }
         }
       }
     }

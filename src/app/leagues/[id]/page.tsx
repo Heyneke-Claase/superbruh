@@ -8,6 +8,7 @@ import ReactCountryFlag from 'react-country-flag';
 import { getCountryCode } from '@/lib/countryMap';
 import MatchInfo from '@/components/MatchInfo';
 import RemoveMemberButton from '@/components/RemoveMemberButton';
+import { getActualMargin } from '@/lib/matchService';
 
 export default async function LeagueDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -140,13 +141,29 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
                         {getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />}
                         <MatchInfo matchId={match.id} team1={match.team1} team2={match.team2} />
                       </div>
-                      <div className="text-sm text-yellow-400 font-bold uppercase">Winner: {match.winner || 'TBA'}</div>
+                      <div className="text-sm text-yellow-400 font-bold uppercase">
+                        Winner: {match.winner || 'TBA'}
+                        {match.winner && getActualMargin(match.status) && ` (${getActualMargin(match.status)})`}
+                      </div>
                    </div>
                    <div className="text-right">
                       <div className="text-xs text-slate-500 uppercase font-bold">Your Pick</div>
-                      <div className={`font-bold ${predictionMap.get(match.id) === match.winner ? 'text-green-500' : 'text-red-500'}`}>
-                        {predictionMap.get(match.id) || 'No Pick'}
+                      <div className={`font-bold ${
+                        predictionMap.get(match.id)?.split('|')[0] === match.winner 
+                          ? (predictionMap.get(match.id)?.split('|')[1] === getActualMargin(match.status) ? 'text-green-400' : 'text-green-600')
+                          : 'text-red-500'
+                      }`}>
+                        {predictionMap.get(match.id)?.split('|')[0] || 'No Pick'}
                       </div>
+                      {predictionMap.get(match.id)?.split('|')[1] && (
+                        <div className={`text-[10px] uppercase font-bold tracking-wider ${
+                          predictionMap.get(match.id)?.split('|')[1] === getActualMargin(match.status)
+                            ? 'text-green-400'
+                            : 'text-red-500/70'
+                        }`}>
+                          {predictionMap.get(match.id)?.split('|')[1]}
+                        </div>
+                      )}
                    </div>
                 </div>
               </div>
