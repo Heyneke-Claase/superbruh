@@ -45,36 +45,60 @@ export async function joinLeague(formData: FormData) {
   const userId = await getUserId();
   if (!userId) return;
 
-  const inviteCode = formData.get('inviteCode') as string;
+  const inviteCodeInput = formData.get('inviteCode') as string;
+  if (!inviteCodeInput) return;
+  
+  const inviteCode = inviteCodeInput.trim().toUpperCase();
   const supabase = await createClient();
 
+  // 1. Find the league by invite code
   const { data: league } = await supabase
     .from('League')
-    .select('id, members:Membership(id)')
+    .select('id')
     .eq('inviteCode', inviteCode)
-    .single();
+    .maybeSingle();
 
-  if (!league) return;
+  if (!league) {
+    console.error('League not found with code:', inviteCode);
+    return;
+  }
 
-  // Check if league is full (max 2 members)
-  const memberCount = (league.members as any[] || []).length;
-  
+  const leagueId = league.id;
+
+  // 2. Check if already a member
   const { data: existing } = await supabase
     .from('Membership')
     .select('id')
     .eq('userId', userId)
-    .eq('leagueId', league.id)
-    .single();
+    .eq('leagueId', leagueId)
+    .maybeSingle();
 
-  if (!existing) {
-    if (memberCount >= 2) {
-      // Could return an error here, but for now just return
-      return;
-    }
-    await supabase.from('Membership').insert({ userId, leagueId: league.id });
+  if (existing) {
+    redirect(`/leagues/${leagueId}`);
   }
 
-  redirect(`/leagues/${league.id}`);
+  // 3. Check member count
+  const { count, error: countError } = await supabase
+    .from('Membership')
+    .select('*', { count: 'exact', head: true })
+    .eq('leagueId', leagueId);
+
+  if ((count || 0) >= 2) {
+    console.error('League is full:', inviteCode);
+    return;
+  }
+
+  // 4. Join the league
+  const { error: insertError } = await supabase
+    .from('Membership')
+    .insert({ userId, leagueId });
+
+  if (insertError) {
+    console.error('Error joining league:', insertError);
+    return;
+  }
+
+  redirect(`/leagues/${leagueId}`);
 }
 
 export async function predictMatch(matchId: string, winner: string) {
