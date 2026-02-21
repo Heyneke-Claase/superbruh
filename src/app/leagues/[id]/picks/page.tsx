@@ -18,6 +18,10 @@ export default async function PicksPage({ params }: { params: Promise<{ id: stri
 
   if (!league) redirect('/leagues');
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/');
+  const currentUserId = user.id;
+
   const memberUserIds = (league.members as any[] || []).map(m => m.userId);
 
   const { data: matches } = await supabase
@@ -34,9 +38,27 @@ export default async function PicksPage({ params }: { params: Promise<{ id: stri
     .in('userId', memberUserIds);
 
   const getPick = (match: any, userId: string) => {
-    const pick = (allPredictions || []).find((p: any) => p.matchId === match.id && p.userId === userId);
-    if (pick) return pick.predictedWinner;
-    if (match.matchStarted) return 'No Pick';
+    const currentUserPick = (allPredictions || []).find((p: any) => p.matchId === match.id && p.userId === currentUserId);
+    const targetUserPick = (allPredictions || []).find((p: any) => p.matchId === match.id && p.userId === userId);
+    
+    // Always show your own pick to yourself
+    if (userId === currentUserId) {
+      if (targetUserPick) return targetUserPick.predictedWinner;
+      if (match.matchStarted) return 'No Pick';
+      return 'Hidden';
+    }
+
+    // Show others' picks if match started
+    if (match.matchStarted) {
+      if (targetUserPick) return targetUserPick.predictedWinner;
+      return 'No Pick';
+    }
+
+    // For others' picks before match starts, only show if BOTH have picked
+    if (currentUserPick && targetUserPick) {
+      return targetUserPick.predictedWinner;
+    }
+
     return 'Hidden';
   };
 
