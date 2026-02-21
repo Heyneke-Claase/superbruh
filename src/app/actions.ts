@@ -29,6 +29,10 @@ export async function createLeague(formData: FormData) {
 
   const supabase = await createClient();
   
+  // NOTE: Predictions are currently global per user, so creating a new league 
+  // resets the user's picks to provide a clean slate for the new competition.
+  await supabase.from('Prediction').delete().eq('userId', userId);
+
   const { data: league, error } = await supabase
     .from('League')
     .insert({ name, inviteCode })
@@ -171,6 +175,10 @@ export async function deleteLeague(leagueId: string) {
   if (!members || members.length === 0 || members[0].userId !== currentUserId) {
     throw new Error('Only the league owner can delete the league');
   }
+
+  // Clear predictions for all members of this league so they have a fresh start elsewhere
+  const memberIds = members.map(m => m.userId);
+  await supabase.from('Prediction').delete().in('userId', memberIds);
 
   // Deleting the league will cascade to memberships if the foreign key is set up with ON DELETE CASCADE.
   // If not, we delete them manually.
