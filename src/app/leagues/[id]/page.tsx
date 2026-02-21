@@ -3,8 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import PredictionForm from '@/components/PredictionForm';
 import { createClient } from '@/lib/supabase/server';
-import ReactCountryFlag from 'react-country-flag';
-import { getCountryCode } from '@/lib/countryMap';
+import { getTeamFlag } from '@/lib/countryMap';
 import MatchInfo from '@/components/MatchInfo';
 import RemoveMemberButton from '@/components/RemoveMemberButton';
 import DeleteLeagueButton from '@/components/DeleteLeagueButton';
@@ -108,20 +107,16 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
                   </div>
                   <div className="flex items-center justify-center md:justify-start gap-2 sm:gap-4">
                     <span className="text-base sm:text-xl font-bold flex items-center gap-1 sm:gap-2">
-                      {match.team1 === 'West Indies' ? (
-                        <img src="https://purecatamphetamine.github.io/country-flag-icons/3x2/UM.svg" alt="WI" className="w-[1.2em] rounded-sm" />
-                      ) : (
-                        getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />
+                      {getTeamFlag(match.team1) && (
+                        <img src={getTeamFlag(match.team1)} alt="" className="w-[1.2em] rounded-sm shadow-sm" />
                       )}
                       {match.team1}
                     </span>
                     <span className="text-slate-600 font-black italic text-sm sm:text-base">VS</span>
                     <span className="text-base sm:text-xl font-bold flex items-center gap-1 sm:gap-2">
                       {match.team2}
-                      {match.team2 === 'West Indies' ? (
-                        <img src="https://purecatamphetamine.github.io/country-flag-icons/3x2/UM.svg" alt="WI" className="w-[1.2em] rounded-sm" />
-                      ) : (
-                        getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />
+                      {getTeamFlag(match.team2) && (
+                        <img src={getTeamFlag(match.team2)} alt="" className="w-[1.2em] rounded-sm shadow-sm" />
                       )}
                     </span>
                     <div className="ml-1 sm:ml-2">
@@ -150,16 +145,12 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
               <div key={match.id} className="bg-slate-900 p-6 rounded-xl border border-slate-800 opacity-75 grayscale-[0.5] flex flex-col md:flex-row justify-between items-center gap-6">
                 <div className="flex-1 text-center md:text-left">
                   <div className="text-base sm:text-xl font-bold flex items-center justify-center md:justify-start gap-1 sm:gap-2">
-                    {match.team1 === 'West Indies' ? (
-                      <img src="https://purecatamphetamine.github.io/country-flag-icons/3x2/UM.svg" alt="WI" className="w-[1.2em] rounded-sm" />
-                    ) : (
-                      getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />
+                    {getTeamFlag(match.team1) && (
+                      <img src={getTeamFlag(match.team1)} alt="" className="w-[1.2em] rounded-sm shadow-sm" />
                     )}
                     {match.team1} vs {match.team2}
-                    {match.team2 === 'West Indies' ? (
-                      <img src="https://purecatamphetamine.github.io/country-flag-icons/3x2/UM.svg" alt="WI" className="w-[1.2em] rounded-sm" />
-                    ) : (
-                      getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />
+                    {getTeamFlag(match.team2) && (
+                      <img src={getTeamFlag(match.team2)} alt="" className="w-[1.2em] rounded-sm shadow-sm" />
                     )}
                     <div className="ml-1 sm:ml-2">
                       <MatchInfo matchId={match.id} team1={match.team1} team2={match.team2} />

@@ -2,8 +2,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import ReactCountryFlag from 'react-country-flag';
-import { getCountryCode } from '@/lib/countryMap';
+import { getTeamFlag } from '@/lib/countryMap';
 import MatchInfo from '@/components/MatchInfo';
 import ScrollToMatch from '@/components/ScrollToMatch';
 import { getActualMargin } from '@/lib/matchService';
@@ -114,20 +113,16 @@ export default async function PicksPage({ params }: { params: Promise<{ id: stri
                 </div>
                 <div className="flex items-center justify-center gap-2 sm:gap-4">
                   <span className="text-base sm:text-xl font-bold flex items-center gap-1 sm:gap-2">
-                    {match.team1 === 'West Indies' ? (
-                      <img src="https://purecatamphetamine.github.io/country-flag-icons/3x2/UM.svg" alt="WI" className="w-[1.2em] rounded-sm" />
-                    ) : (
-                      getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />
+                    {getTeamFlag(match.team1) && (
+                      <img src={getTeamFlag(match.team1)} alt="" className="w-[1.2em] rounded-sm shadow-sm" />
                     )}
                     {match.team1}
                   </span>
                   <span className="text-slate-600 font-black italic text-sm sm:text-base">VS</span>
                   <span className="text-base sm:text-xl font-bold flex items-center gap-1 sm:gap-2">
                     {match.team2}
-                    {match.team2 === 'West Indies' ? (
-                      <img src="https://purecatamphetamine.github.io/country-flag-icons/3x2/UM.svg" alt="WI" className="w-[1.2em] rounded-sm" />
-                    ) : (
-                      getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />
+                    {getTeamFlag(match.team2) && (
+                      <img src={getTeamFlag(match.team2)} alt="" className="w-[1.2em] rounded-sm shadow-sm" />
                     )}
                   </span>
                   <div className="ml-1 sm:ml-2">
