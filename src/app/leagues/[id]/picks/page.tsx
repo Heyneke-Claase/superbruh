@@ -115,9 +115,9 @@ export default async function PicksPage({ params }: { params: Promise<{ id: stri
                 <div className="flex items-center justify-center gap-2 sm:gap-4">
                   <span className="text-base sm:text-xl font-bold flex items-center gap-1 sm:gap-2">
                     {match.team1 === 'West Indies' ? (
-                      <img src="/west-indies-cricket-board-flag.svg" alt="WI" className="w-[1.2em] aspect-[3/2] object-contain rounded-sm" />
+                      <img src="/west-indies-cricket-board-flag.svg" alt="WI" className="w-[1.4em] h-[1em] object-cover rounded-[2px]" />
                     ) : (
-                      getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg style={{ width: '1.2em', height: 'auto' }} />
+                      getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg style={{ width: '1.4em', height: '1em' }} />
                     )}
                     {match.team1}
                   </span>
@@ -125,9 +125,9 @@ export default async function PicksPage({ params }: { params: Promise<{ id: stri
                   <span className="text-base sm:text-xl font-bold flex items-center gap-1 sm:gap-2">
                     {match.team2}
                     {match.team2 === 'West Indies' ? (
-                      <img src="/west-indies-cricket-board-flag.svg" alt="WI" className="w-[1.2em] aspect-[3/2] object-contain rounded-sm" />
+                      <img src="/west-indies-cricket-board-flag.svg" alt="WI" className="w-[1.4em] h-[1em] object-cover rounded-[2px]" />
                     ) : (
-                      getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg style={{ width: '1.2em', height: 'auto' }} />
+                      getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg style={{ width: '1.4em', height: '1em' }} />
                     )}
                   </span>
                   <div className="ml-1 sm:ml-2">
