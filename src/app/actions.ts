@@ -131,3 +131,28 @@ export async function getMatchInfo(matchId: string) {
   }
 }
 
+export async function deleteLeague(leagueId: string) {
+  const currentUserId = await getUserId();
+  if (!currentUserId) return;
+
+  const supabase = await createClient();
+
+  // Check if current user is the owner (first member)
+  const { data: members } = await supabase
+    .from('Membership')
+    .select('userId')
+    .eq('leagueId', leagueId)
+    .order('joinedAt', { ascending: true });
+
+  if (!members || members.length === 0 || members[0].userId !== currentUserId) {
+    throw new Error('Only the league owner can delete the league');
+  }
+
+  // Deleting the league will cascade to memberships if the foreign key is set up with ON DELETE CASCADE.
+  // If not, we delete them manually.
+  await supabase.from('Membership').delete().eq('leagueId', leagueId);
+  await supabase.from('League').delete().eq('id', leagueId);
+
+  redirect('/leagues');
+}
+

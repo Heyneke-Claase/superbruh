@@ -8,6 +8,7 @@ import ReactCountryFlag from 'react-country-flag';
 import { getCountryCode } from '@/lib/countryMap';
 import MatchInfo from '@/components/MatchInfo';
 import RemoveMemberButton from '@/components/RemoveMemberButton';
+import DeleteLeagueButton from '@/components/DeleteLeagueButton';
 import { getActualMargin } from '@/lib/matchService';
 
 export default async function LeagueDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -55,7 +56,12 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
     <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0">
-          <Link href="/leagues" prefetch={true} className="text-yellow-400 hover:underline">← Back to Leagues</Link>
+          <div className="flex items-center gap-4">
+            <Link href="/leagues" prefetch={true} className="text-yellow-400 hover:underline">← Back to Leagues</Link>
+            {isOwner && (
+              <DeleteLeagueButton leagueId={id} leagueName={league.name} />
+            )}
+          </div>
           <div className="flex gap-2 w-full md:w-auto">
             <Link href={`/leagues/${id}/picks`} prefetch={true} className="bg-slate-800 px-4 py-2 rounded-lg font-bold hover:bg-slate-700 flex-1 text-center">All Picks</Link>
             <Link href={`/leagues/${id}/leaderboard`} prefetch={true} className="bg-slate-800 px-4 py-2 rounded-lg font-bold hover:bg-slate-700 flex-1 text-center">Leaderboard</Link>
