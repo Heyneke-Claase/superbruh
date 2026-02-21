@@ -70,10 +70,10 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
         </div>
 
         <header className="space-y-2 text-center md:text-left">
-          <h1 className="text-4xl font-black italic text-yellow-400 uppercase tracking-tighter">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black italic text-yellow-400 uppercase tracking-tighter break-words">
             {league.name}
           </h1>
-          <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">
+          <p className="text-slate-500 font-bold uppercase tracking-widest text-xs sm:text-sm">
             Invite Code: <span className="text-slate-300">{league.inviteCode}</span>
           </p>
           <div className="flex flex-wrap gap-2 pt-2 justify-center md:justify-start">
@@ -106,17 +106,17 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
                       timeZone: 'Africa/Johannesburg'
                     })}
                   </div>
-                  <div className="flex items-center justify-center md:justify-start gap-4">
-                    <span className="text-xl font-bold flex items-center gap-2">
+                  <div className="flex items-center justify-center md:justify-start gap-2 sm:gap-4">
+                    <span className="text-base sm:text-xl font-bold flex items-center gap-1 sm:gap-2">
                       {getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />}
                       {match.team1}
                     </span>
-                    <span className="text-slate-600 font-black italic">VS</span>
-                    <span className="text-xl font-bold flex items-center gap-2">
+                    <span className="text-slate-600 font-black italic text-sm sm:text-base">VS</span>
+                    <span className="text-base sm:text-xl font-bold flex items-center gap-1 sm:gap-2">
                       {match.team2}
                       {getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />}
                     </span>
-                    <div className="ml-2">
+                    <div className="ml-1 sm:ml-2">
                       <MatchInfo matchId={match.id} team1={match.team1} team2={match.team2} />
                     </div>
                   </div>
@@ -141,11 +141,13 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
              {(matches || []).filter((m: any) => m.matchEnded).map((match: any) => (
               <div key={match.id} className="bg-slate-900 p-6 rounded-xl border border-slate-800 opacity-75 grayscale-[0.5] flex flex-col md:flex-row justify-between items-center gap-6">
                 <div className="flex-1 text-center md:text-left">
-                  <div className="text-xl font-bold flex items-center justify-center md:justify-start gap-2">
+                  <div className="text-base sm:text-xl font-bold flex items-center justify-center md:justify-start gap-1 sm:gap-2">
                     {getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />}
                     {match.team1} vs {match.team2}
                     {getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />}
-                    <MatchInfo matchId={match.id} team1={match.team1} team2={match.team2} />
+                    <div className="ml-1 sm:ml-2">
+                      <MatchInfo matchId={match.id} team1={match.team1} team2={match.team2} />
+                    </div>
                   </div>
                   <div className="text-sm text-yellow-400 font-bold uppercase mt-2">
                     Winner: {match.winner || 'TBA'}

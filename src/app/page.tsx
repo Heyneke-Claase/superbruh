@@ -29,10 +29,10 @@ export default async function Home() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-white p-4">
       <div className="max-w-md w-full space-y-12 text-center">
         <div className="space-y-4">
-          <h1 className="text-7xl font-black italic tracking-tighter text-yellow-400 uppercase leading-none">
+          <h1 className="text-5xl sm:text-7xl font-black italic tracking-tighter text-yellow-400 uppercase leading-none">
             Superbrah
           </h1>
-          <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-sm">
+          <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-xs sm:text-sm">
             T20 World Cup Fantasy
           </p>
         </div>

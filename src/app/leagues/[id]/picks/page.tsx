@@ -91,7 +91,7 @@ export default async function PicksPage({ params }: { params: Promise<{ id: stri
         </div>
 
         <header className="text-center space-y-2">
-          <h1 className="text-4xl md:text-5xl font-black italic text-yellow-400 uppercase tracking-tighter">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black italic text-yellow-400 uppercase tracking-tighter break-words">
             {league.name}
           </h1>
           <p className="text-slate-400 font-medium italic text-sm md:text-base">Head to Head Picks</p>
@@ -112,17 +112,17 @@ export default async function PicksPage({ params }: { params: Promise<{ id: stri
                     timeZone: 'Africa/Johannesburg'
                   })}
                 </div>
-                <div className="flex items-center justify-center gap-4">
-                  <span className="text-xl font-bold flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2 sm:gap-4">
+                  <span className="text-base sm:text-xl font-bold flex items-center gap-1 sm:gap-2">
                     {getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />}
                     {match.team1}
                   </span>
-                  <span className="text-slate-600 font-black italic">VS</span>
-                  <span className="text-xl font-bold flex items-center gap-2">
+                  <span className="text-slate-600 font-black italic text-sm sm:text-base">VS</span>
+                  <span className="text-base sm:text-xl font-bold flex items-center gap-1 sm:gap-2">
                     {match.team2}
                     {getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />}
                   </span>
-                  <div className="ml-2">
+                  <div className="ml-1 sm:ml-2">
                     <MatchInfo matchId={match.id} team1={match.team1} team2={match.team2} />
                   </div>
                 </div>

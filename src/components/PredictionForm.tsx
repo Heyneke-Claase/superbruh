@@ -68,7 +68,7 @@ export default function PredictionForm({
         <button
           onClick={() => handlePredictTeam(team1)}
           disabled={isLocked || isPending}
-          className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all border-2 ${
+          className={`flex-1 py-3 px-2 sm:px-4 rounded-lg font-bold transition-all border-2 text-sm sm:text-base truncate ${
             selectedTeam === team1 
               ? 'bg-yellow-400 border-yellow-400 text-slate-950' 
               : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-yellow-400'
@@ -79,7 +79,7 @@ export default function PredictionForm({
         <button
           onClick={() => handlePredictTeam(team2)}
           disabled={isLocked || isPending}
-          className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all border-2 ${
+          className={`flex-1 py-3 px-2 sm:px-4 rounded-lg font-bold transition-all border-2 text-sm sm:text-base truncate ${
             selectedTeam === team2 
               ? 'bg-yellow-400 border-yellow-400 text-slate-950' 
               : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-yellow-400'

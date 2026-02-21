@@ -29,37 +29,40 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ id
         </div>
 
         <header className="text-center space-y-2">
-          <h1 className="text-4xl md:text-5xl font-black italic text-yellow-400 uppercase tracking-tighter">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black italic text-yellow-400 uppercase tracking-tighter break-words">
             {league.name}
           </h1>
           <p className="text-slate-400 font-medium italic text-sm md:text-base">Standings of the world's best bru players</p>
         </header>
 
-        <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[400px]">
+        <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+          <table className="w-full text-left border-collapse">
             <thead className="bg-slate-800/50">
               <tr>
-                <th className="px-4 md:px-6 py-4 uppercase text-xs font-black text-slate-400 w-16">Pos</th>
-                <th className="px-4 md:px-6 py-4 uppercase text-xs font-black text-slate-400">Player</th>
-                <th className="px-4 md:px-6 py-4 uppercase text-xs font-black text-slate-400 text-right">Points</th>
+                <th className="px-3 md:px-6 py-4 uppercase text-[10px] md:text-xs font-black text-slate-400 w-12 md:w-16">Pos</th>
+                <th className="px-3 md:px-6 py-4 uppercase text-[10px] md:text-xs font-black text-slate-400">Player</th>
+                <th className="px-3 md:px-6 py-4 uppercase text-[10px] md:text-xs font-black text-slate-400 text-right">
+                  <span className="hidden md:inline">Points</span>
+                  <span className="md:hidden">Pts</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
               {sortedMembers.map((m: any, index: number) => (
                 <tr key={m.id} className="hover:bg-slate-800/30 transition-colors">
-                  <td className="px-4 md:px-6 py-4 md:py-6 font-black italic text-xl md:text-2xl text-slate-500">
+                  <td className="px-3 md:px-6 py-4 md:py-6 font-black italic text-lg md:text-2xl text-slate-500">
                     {index + 1}
                   </td>
-                  <td className="px-4 md:px-6 py-4 md:py-6">
-                    <div className="flex items-center gap-3 md:gap-4">
+                  <td className="px-3 md:px-6 py-4 md:py-6">
+                    <div className="flex items-center gap-2 md:gap-4">
                       {m.user.image && (
-                        <img src={m.user.image} alt="" className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-slate-700" />
+                        <img src={m.user.image} alt="" className="w-7 h-7 md:w-10 md:h-10 rounded-full border border-slate-700 object-cover" />
                       )}
-                      <div className="text-lg md:text-xl font-bold truncate max-w-[150px] md:max-w-none">{m.user.name}</div>
+                      <div className="text-base md:text-xl font-bold truncate max-w-[120px] sm:max-w-[200px] md:max-w-none">{m.user.name}</div>
                     </div>
                   </td>
-                  <td className="px-4 md:px-6 py-4 md:py-6 text-right">
-                    <div className="text-2xl md:text-3xl font-black text-white">{m.points}</div>
+                  <td className="px-3 md:px-6 py-4 md:py-6 text-right">
+                    <div className="text-xl md:text-3xl font-black text-white">{m.points}</div>
                   </td>
                 </tr>
               ))}
