@@ -4,6 +4,39 @@ import { useState } from 'react';
 import { getMatchInfo } from '@/app/actions';
 import { Info, X, Loader2 } from 'lucide-react';
 
+// We duplicate the margin logic here to avoid importing server-only code into a client component
+function getActualMargin(status: string | null): string | null {
+  if (!status || typeof status !== 'string') return null;
+  
+  try {
+    const runsMatch = status.match(/won by (\d+) runs?/i);
+    if (runsMatch) {
+      const runs = parseInt(runsMatch[1], 10);
+      if (runs <= 9) return 'Narrow';
+      if (runs <= 24) return 'Comfortable';
+      if (runs <= 39) return 'Easy';
+      return 'Thrashing';
+    }
+    
+    const wktsMatch = status.match(/won by (\d+) wkts?/i) || status.match(/won by (\d+) wickets?/i);
+    if (wktsMatch) {
+      const wkts = parseInt(wktsMatch[1], 10);
+      if (wkts <= 2) return 'Narrow';
+      if (wkts <= 5) return 'Comfortable';
+      if (wkts <= 8) return 'Easy';
+      return 'Thrashing';
+    }
+    
+    if (status.toLowerCase().includes('super over')) {
+      return 'Narrow';
+    }
+  } catch (err) {
+    console.error('Error parsing margin:', err);
+  }
+  
+  return null;
+}
+
 interface MatchInfoProps {
   matchId: string;
   team1: string;
@@ -66,7 +99,7 @@ export default function MatchInfo({ matchId, team1, team2 }: MatchInfoProps) {
                       <span>{team2}</span>
                     </div>
                     <div className="inline-block px-3 py-1 bg-yellow-400/10 text-yellow-400 rounded-full text-[10px] font-black uppercase tracking-tighter">
-                      {info.status}
+                      {info.status} {getActualMargin(info.status) ? `(${getActualMargin(info.status)})` : ''}
                     </div>
                   </div>
 

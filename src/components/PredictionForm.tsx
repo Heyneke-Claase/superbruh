@@ -28,17 +28,17 @@ export default function PredictionForm({
   const [isLocked, setIsLocked] = useState(!!currentPrediction);
 
   const handlePredictTeam = (winner: string) => {
-    if (matchStarted || isLocked) return;
+    if (isLocked) return;
     setSelectedTeam(winner);
   };
 
   const handlePredictMargin = (margin: string) => {
-    if (matchStarted || isLocked) return;
+    if (isLocked) return;
     setSelectedMargin(margin);
   };
 
   const handleLock = () => {
-    if (!selectedTeam || !selectedMargin || isLocked || matchStarted) return;
+    if (!selectedTeam || !selectedMargin || isLocked) return;
     setIsLocked(true);
     startTransition(async () => {
       await predictMatch(matchId, `${selectedTeam}|${selectedMargin}`);
@@ -51,7 +51,7 @@ export default function PredictionForm({
         <div className="text-xs text-slate-500 font-bold uppercase">Pick your winner & margin</div>
         <button 
           onClick={handleLock}
-          disabled={!selectedTeam || !selectedMargin || isLocked || matchStarted || isPending}
+          disabled={!selectedTeam || !selectedMargin || isLocked || isPending}
           className={`p-1.5 rounded-md transition-all ${
             isLocked 
               ? 'bg-yellow-400/20 text-yellow-400' 
@@ -67,23 +67,23 @@ export default function PredictionForm({
       <div className="flex gap-2">
         <button
           onClick={() => handlePredictTeam(team1)}
-          disabled={matchStarted || isLocked || isPending}
+          disabled={isLocked || isPending}
           className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all border-2 ${
             selectedTeam === team1 
               ? 'bg-yellow-400 border-yellow-400 text-slate-950' 
               : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-yellow-400'
-          } ${(matchStarted || isLocked) ? 'opacity-50 cursor-not-allowed' : ''}`}
+          } ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           {team1}
         </button>
         <button
           onClick={() => handlePredictTeam(team2)}
-          disabled={matchStarted || isLocked || isPending}
+          disabled={isLocked || isPending}
           className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all border-2 ${
             selectedTeam === team2 
               ? 'bg-yellow-400 border-yellow-400 text-slate-950' 
               : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-yellow-400'
-          } ${(matchStarted || isLocked) ? 'opacity-50 cursor-not-allowed' : ''}`}
+          } ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           {team2}
         </button>
@@ -95,12 +95,12 @@ export default function PredictionForm({
             <button
               key={margin}
               onClick={() => handlePredictMargin(margin)}
-              disabled={matchStarted || isLocked || isPending}
+              disabled={isLocked || isPending}
               className={`py-2 px-2 rounded-lg text-xs font-bold transition-all border-2 ${
                 selectedMargin === margin 
                   ? 'bg-yellow-400 border-yellow-400 text-slate-950' 
                   : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-yellow-400'
-              } ${(matchStarted || isLocked) ? 'opacity-50 cursor-not-allowed' : ''}`}
+              } ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {margin}
             </button>

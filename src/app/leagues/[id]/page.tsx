@@ -138,21 +138,20 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
           <h2 className="text-2xl font-bold uppercase text-slate-400 border-b border-slate-800 pb-2 pt-8">Completed Matches</h2>
           <div className="grid gap-4">
              {(matches || []).filter((m: any) => m.matchEnded).map((match: any) => (
-              <div key={match.id} className="bg-slate-900 p-6 rounded-xl border border-slate-800 opacity-75 grayscale-[0.5]">
-                <div className="flex justify-between items-center">
-                   <div>
-                      <div className="text-xl font-bold flex items-center gap-2">
-                        {getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />}
-                        {match.team1} vs {match.team2}
-                        {getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />}
-                        <MatchInfo matchId={match.id} team1={match.team1} team2={match.team2} />
-                      </div>
-                      <div className="text-sm text-yellow-400 font-bold uppercase">
-                        Winner: {match.winner || 'TBA'}
-                        {match.winner && getActualMargin(match.status) && ` (${getActualMargin(match.status)})`}
-                      </div>
-                   </div>
-                   <div className="text-right">
+              <div key={match.id} className="bg-slate-900 p-6 rounded-xl border border-slate-800 opacity-75 grayscale-[0.5] flex flex-col md:flex-row justify-between items-center gap-6">
+                <div className="flex-1 text-center md:text-left">
+                  <div className="text-xl font-bold flex items-center justify-center md:justify-start gap-2">
+                    {getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />}
+                    {match.team1} vs {match.team2}
+                    {getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />}
+                    <MatchInfo matchId={match.id} team1={match.team1} team2={match.team2} />
+                  </div>
+                  <div className="text-sm text-yellow-400 font-bold uppercase mt-2">
+                    Winner: {match.winner || 'TBA'}
+                    {match.winner && getActualMargin(match.status) && ` (${getActualMargin(match.status)})`}
+                  </div>
+                  <div className="mt-4 flex items-center justify-center md:justify-start gap-4">
+                    <div className="text-left">
                       <div className="text-xs text-slate-500 uppercase font-bold">Your Pick</div>
                       <div className={`font-bold ${
                         predictionMap.get(match.id)?.split('|')[0] === match.winner 
@@ -170,7 +169,18 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
                           {predictionMap.get(match.id)?.split('|')[1]}
                         </div>
                       )}
-                   </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex-1 w-full md:w-auto">
+                   <PredictionForm 
+                    matchId={match.id} 
+                    team1={match.team1} 
+                    team2={match.team2} 
+                    currentPrediction={predictionMap.get(match.id)}
+                    matchStarted={false} // Override to allow picking old matches
+                   />
                 </div>
               </div>
             ))}
