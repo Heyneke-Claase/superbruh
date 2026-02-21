@@ -50,28 +50,32 @@ export async function syncMatches() {
 }
 
 export function getActualMargin(status: string | null): string | null {
-  if (!status) return null;
+  if (!status || typeof status !== 'string') return null;
   
-  const runsMatch = status.match(/won by (\d+) runs?/i);
-  if (runsMatch) {
-    const runs = parseInt(runsMatch[1], 10);
-    if (runs <= 9) return 'Narrow';
-    if (runs <= 24) return 'Comfortable';
-    if (runs <= 39) return 'Easy';
-    return 'Thrashing';
-  }
-  
-  const wktsMatch = status.match(/won by (\d+) wkts?/i) || status.match(/won by (\d+) wickets?/i);
-  if (wktsMatch) {
-    const wkts = parseInt(wktsMatch[1], 10);
-    if (wkts <= 2) return 'Narrow';
-    if (wkts <= 5) return 'Comfortable';
-    if (wkts <= 8) return 'Easy';
-    return 'Thrashing';
-  }
-  
-  if (status.toLowerCase().includes('super over')) {
-    return 'Narrow';
+  try {
+    const runsMatch = status.match(/won by (\d+) runs?/i);
+    if (runsMatch) {
+      const runs = parseInt(runsMatch[1], 10);
+      if (runs <= 9) return 'Narrow';
+      if (runs <= 24) return 'Comfortable';
+      if (runs <= 39) return 'Easy';
+      return 'Thrashing';
+    }
+    
+    const wktsMatch = status.match(/won by (\d+) wkts?/i) || status.match(/won by (\d+) wickets?/i);
+    if (wktsMatch) {
+      const wkts = parseInt(wktsMatch[1], 10);
+      if (wkts <= 2) return 'Narrow';
+      if (wkts <= 5) return 'Comfortable';
+      if (wkts <= 8) return 'Easy';
+      return 'Thrashing';
+    }
+    
+    if (status.toLowerCase().includes('super over')) {
+      return 'Narrow';
+    }
+  } catch (err) {
+    console.error('Error parsing margin:', err);
   }
   
   return null;

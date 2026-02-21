@@ -99,7 +99,7 @@ export async function removeMember(leagueId: string, targetUserId: string) {
     .from('Membership')
     .select('userId')
     .eq('leagueId', leagueId)
-    .order('created_at', { ascending: true });
+    .order('joinedAt', { ascending: true });
 
   if (!members || members.length === 0 || members[0].userId !== currentUserId) {
     throw new Error('Only the league owner can remove members');
