@@ -50,12 +50,15 @@ export async function joinLeague(formData: FormData) {
 
   const { data: league } = await supabase
     .from('League')
-    .select('id')
+    .select('id, members:Membership(id)')
     .eq('inviteCode', inviteCode)
     .single();
 
   if (!league) return;
 
+  // Check if league is full (max 2 members)
+  const memberCount = (league.members as any[] || []).length;
+  
   const { data: existing } = await supabase
     .from('Membership')
     .select('id')
@@ -64,6 +67,10 @@ export async function joinLeague(formData: FormData) {
     .single();
 
   if (!existing) {
+    if (memberCount >= 2) {
+      // Could return an error here, but for now just return
+      return;
+    }
     await supabase.from('Membership').insert({ userId, leagueId: league.id });
   }
 
@@ -79,6 +86,35 @@ export async function predictMatch(matchId: string, winner: string) {
     { userId, matchId, predictedWinner: winner },
     { onConflict: 'userId,matchId' }
   );
+}
+
+export async function removeMember(leagueId: string, targetUserId: string) {
+  const currentUserId = await getUserId();
+  if (!currentUserId) return;
+
+  const supabase = await createClient();
+
+  // Check if current user is the owner (first member)
+  const { data: members } = await supabase
+    .from('Membership')
+    .select('userId')
+    .eq('leagueId', leagueId)
+    .order('created_at', { ascending: true });
+
+  if (!members || members.length === 0 || members[0].userId !== currentUserId) {
+    throw new Error('Only the league owner can remove members');
+  }
+
+  // Cannot remove yourself
+  if (currentUserId === targetUserId) {
+    throw new Error('You cannot remove yourself from the league');
+  }
+
+  await supabase
+    .from('Membership')
+    .delete()
+    .eq('leagueId', leagueId)
+    .eq('userId', targetUserId);
 }
 
 export async function getMatchInfo(matchId: string) {

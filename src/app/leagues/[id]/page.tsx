@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server';
 import ReactCountryFlag from 'react-country-flag';
 import { getCountryCode } from '@/lib/countryMap';
 import MatchInfo from '@/components/MatchInfo';
+import RemoveMemberButton from '@/components/RemoveMemberButton';
 
 export default async function LeagueDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,6 +26,14 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
     .single();
 
   if (!league) redirect('/leagues');
+
+  // Sort members by creation date to identify owner
+  const sortedMembers = (league.members as any[] || []).sort((a: any, b: any) => 
+    new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()
+  );
+  
+  const ownerId = sortedMembers[0]?.userId;
+  const isOwner = userId === ownerId;
 
   const { data: matches } = await supabase
     .from('Match')
@@ -61,10 +70,13 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
           </p>
           <div className="flex flex-wrap gap-2 pt-2 justify-center md:justify-start">
             <span className="text-xs font-bold text-slate-500 uppercase flex items-center mr-2">{league.members?.length || 0} Members:</span>
-            {(league.members as any[] || []).map((m: any) => (
+            {sortedMembers.map((m: any) => (
               <div key={m.id} className="flex items-center gap-2 bg-slate-800/50 px-3 py-1.5 rounded-full border border-slate-700/50">
                 {m.user.image && <img src={m.user.image} alt="" className="w-5 h-5 rounded-full" />}
                 <span className="text-xs font-bold text-slate-300">{m.user.name}</span>
+                {isOwner && m.userId !== userId && (
+                  <RemoveMemberButton leagueId={id} userId={m.userId} userName={m.user.name} />
+                )}
               </div>
             ))}
           </div>
