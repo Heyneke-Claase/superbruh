@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import ReactCountryFlag from 'react-country-flag';
 import { getCountryCode } from '@/lib/countryMap';
 import MatchInfo from '@/components/MatchInfo';
+import ScrollToMatch from '@/components/ScrollToMatch';
 
 export default async function PicksPage({ params }: { params: Promise<{ id: string }> | any }) {
   const { id } = await params;
@@ -36,6 +37,9 @@ export default async function PicksPage({ params }: { params: Promise<{ id: stri
     .from('Prediction')
     .select('*')
     .in('userId', memberUserIds);
+
+  const activeMatch = (matches || []).find((m: any) => !m.matchEnded) || (matches || [])[(matches || []).length - 1];
+  const activeMatchId = activeMatch?.id;
 
   const getPick = (match: any, userId: string) => {
     const currentUserPick = (allPredictions || []).find((p: any) => p.matchId === match.id && p.userId === currentUserId);
@@ -81,8 +85,9 @@ export default async function PicksPage({ params }: { params: Promise<{ id: stri
         </header>
 
         <div className="space-y-6">
+          <ScrollToMatch matchId={activeMatchId} />
           {(matches || []).map((match: any) => (
-            <div key={match.id} className="bg-slate-900 p-6 rounded-xl border border-slate-800">
+            <div key={match.id} id={`match-${match.id}`} className="bg-slate-900 p-6 rounded-xl border border-slate-800">
               <div className="text-center mb-6">
                 <div suppressHydrationWarning className="text-xs text-slate-500 font-bold uppercase mb-2">
                   {new Date(match.dateTimeGMT).toLocaleString('en-ZA', { 
