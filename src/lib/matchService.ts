@@ -30,7 +30,18 @@ export async function syncMatches() {
         winner = m.status.split(' won by ')[0];
       }
       
-      const matchData = {
+      let matchScore = null;
+      if (m.matchEnded) {
+        try {
+          const res = await fetch(`https://api.cricapi.com/v1/match_info?apikey=${API_KEY}&id=${m.id}`);
+          const json = await res.json();
+          matchScore = json.data?.score || null;
+        } catch (err) {
+          console.error('Error fetching full match score:', err);
+        }
+      }
+
+      const matchData: any = {
         id: m.id,
         team1: m.teams[0],
         team2: m.teams[1],
@@ -43,6 +54,10 @@ export async function syncMatches() {
         matchStarted: m.matchStarted,
         matchEnded: m.matchEnded,
       };
+
+      if (matchScore) {
+        matchData.score = matchScore;
+      }
 
       await supabase.from('Match').upsert(matchData);
     }
@@ -58,6 +73,18 @@ export function getActualMargin(status: string | null): string | null {
   if (!status || typeof status !== 'string') return null;
   
   try {
+    // 1. Check for previously calculated margin in status parentheses
+    const parenthesized = status.match(/\((Narrow|Comfortable|Easy|Thrashing)\)/i);
+    if (parenthesized) return parenthesized[1];
+
+    const statusLower = status.toLowerCase();
+    
+    // Super Over is always Narrow
+    if (statusLower.includes('super over')) {
+      return 'Narrow';
+    }
+
+    // Winner Batted First (Runs)
     const runsMatch = status.match(/won by (\d+) runs?/i);
     if (runsMatch) {
       const runs = parseInt(runsMatch[1], 10);
@@ -67,16 +94,13 @@ export function getActualMargin(status: string | null): string | null {
       return 'Thrashing';
     }
     
+    // Winner Batted Second (Wickets Fallback - preferred and correct calculations are stored during sync)
     const wktsMatch = status.match(/won by (\d+) wkts?/i) || status.match(/won by (\d+) wickets?/i);
     if (wktsMatch) {
-      const wkts = parseInt(wktsMatch[1], 10);
-      if (wkts <= 2) return 'Narrow';
-      if (wkts <= 5) return 'Comfortable';
-      if (wkts <= 8) return 'Easy';
-      return 'Thrashing';
-    }
-    
-    if (status.toLowerCase().includes('super over')) {
+      const wickets = parseInt(wktsMatch[1], 10);
+      if (wickets >= 9) return 'Thrashing';
+      if (wickets >= 6) return 'Easy';
+      if (wickets >= 3) return 'Comfortable';
       return 'Narrow';
     }
   } catch (err) {
@@ -92,7 +116,7 @@ export async function updatePoints(userId?: string) {
   // Get all finished matches
   const { data: finishedMatches } = await supabase
     .from('Match')
-    .select('id, winner, status')
+    .select('id, winner, status, score')
     .eq('matchEnded', true);
 
   if (!finishedMatches) return;

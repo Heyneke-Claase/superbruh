@@ -9,14 +9,11 @@ function getActualMargin(status: string | null): string | null {
   if (!status || typeof status !== 'string') return null;
   
   try {
-    const runsMatch = status.match(/won by (\d+) runs?/i);
-    if (runsMatch) {
-      const runs = parseInt(runsMatch[1], 10);
-      if (runs <= 9) return 'Narrow';
-      if (runs <= 24) return 'Comfortable';
-      if (runs <= 39) return 'Easy';
-      return 'Thrashing';
-    }
+    // 1. Check for previously calculated margin in status parentheses
+    const parenthesized = status.match(/\((Narrow|Comfortable|Easy|Thrashing)\)/i);
+    if (parenthesized) return parenthesized[1];
+
+    const statusLower = status.toLowerCase();
     
     const wktsMatch = status.match(/won by (\d+) wkts?/i) || status.match(/won by (\d+) wickets?/i);
     if (wktsMatch) {
