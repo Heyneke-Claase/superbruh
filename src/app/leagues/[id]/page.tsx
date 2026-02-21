@@ -109,9 +109,9 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
                   <div className="flex items-center justify-center md:justify-start gap-2 sm:gap-4">
                     <span className="text-base sm:text-xl font-bold flex items-center gap-1 sm:gap-2">
                       {match.team1 === 'West Indies' ? (
-                        <img src="https://upload.wikimedia.org/wikipedia/en/9/9b/Cricket_West_Indies_logo.svg" alt="WI" className="w-[1.2em] h-auto object-contain" />
+                        <img src="/west-indies-cricket-board-flag.svg" alt="WI" className="w-[1.2em] aspect-[3/2] object-contain rounded-sm" />
                       ) : (
-                        getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />
+                        getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg style={{ width: '1.2em', height: 'auto' }} />
                       )}
                       {match.team1}
                     </span>
@@ -119,9 +119,9 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
                     <span className="text-base sm:text-xl font-bold flex items-center gap-1 sm:gap-2">
                       {match.team2}
                       {match.team2 === 'West Indies' ? (
-                        <img src="https://upload.wikimedia.org/wikipedia/en/9/9b/Cricket_West_Indies_logo.svg" alt="WI" className="w-[1.2em] h-auto object-contain" />
+                        <img src="/west-indies-cricket-board-flag.svg" alt="WI" className="w-[1.2em] aspect-[3/2] object-contain rounded-sm" />
                       ) : (
-                        getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />
+                        getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg style={{ width: '1.2em', height: 'auto' }} />
                       )}
                     </span>
                     <div className="ml-1 sm:ml-2">
@@ -151,15 +151,15 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
                 <div className="flex-1 text-center md:text-left">
                   <div className="text-base sm:text-xl font-bold flex items-center justify-center md:justify-start gap-1 sm:gap-2">
                     {match.team1 === 'West Indies' ? (
-                      <img src="https://upload.wikimedia.org/wikipedia/en/9/9b/Cricket_West_Indies_logo.svg" alt="WI" className="w-[1.2em] h-auto object-contain" />
+                      <img src="/west-indies-cricket-board-flag.svg" alt="WI" className="w-[1.2em] aspect-[3/2] object-contain rounded-sm" />
                     ) : (
-                      getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg />
+                      getCountryCode(match.team1) && <ReactCountryFlag countryCode={getCountryCode(match.team1)} svg style={{ width: '1.2em', height: 'auto' }} />
                     )}
                     {match.team1} vs {match.team2}
                     {match.team2 === 'West Indies' ? (
-                      <img src="https://upload.wikimedia.org/wikipedia/en/9/9b/Cricket_West_Indies_logo.svg" alt="WI" className="w-[1.2em] h-auto object-contain" />
+                      <img src="/west-indies-cricket-board-flag.svg" alt="WI" className="w-[1.2em] aspect-[3/2] object-contain rounded-sm" />
                     ) : (
-                      getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg />
+                      getCountryCode(match.team2) && <ReactCountryFlag countryCode={getCountryCode(match.team2)} svg style={{ width: '1.2em', height: 'auto' }} />
                     )}
                     <div className="ml-1 sm:ml-2">
                       <MatchInfo matchId={match.id} team1={match.team1} team2={match.team2} />
