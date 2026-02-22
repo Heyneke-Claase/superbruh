@@ -15,17 +15,33 @@ export default function MatchInfo({ matchId, team1, team2 }: MatchInfoProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [info, setInfo] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleOpen = async () => {
     setIsOpen(true);
-    if (!info) {
+    if (!info && !error) {
       setLoading(true);
+      setError(null);
       const res = await getMatchInfo(matchId);
       if (res.status === 'success') {
         setInfo(res.data);
+      } else {
+        setError(res.reason || 'Unknown error');
       }
       setLoading(false);
     }
+  };
+
+  const handleRetry = async () => {
+    setError(null);
+    setLoading(true);
+    const res = await getMatchInfo(matchId);
+    if (res.status === 'success') {
+      setInfo(res.data);
+    } else {
+      setError(res.reason || 'Unknown error');
+    }
+    setLoading(false);
   };
 
   return (
@@ -56,6 +72,17 @@ export default function MatchInfo({ matchId, team1, team2 }: MatchInfoProps) {
                 <div className="flex flex-col items-center justify-center py-12 gap-4">
                   <Loader2 className="w-8 h-8 text-yellow-400 animate-spin" />
                   <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">Fetching live data...</p>
+                </div>
+              ) : error ? (
+                <div className="text-center py-12 space-y-3">
+                  <p className="text-red-400 font-bold">Failed to load match info.</p>
+                  <p className="text-slate-500 text-xs font-mono break-all">{error}</p>
+                  <button
+                    onClick={handleRetry}
+                    className="mt-2 px-4 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-300 transition-colors"
+                  >
+                    Retry
+                  </button>
                 </div>
               ) : info ? (
                 <div className="space-y-6">
@@ -96,11 +123,7 @@ export default function MatchInfo({ matchId, team1, team2 }: MatchInfoProps) {
                     <span>ID: {matchId.substring(0, 8)}</span>
                   </div>
                 </div>
-              ) : (
-                <div className="text-center py-12">
-                   <p className="text-red-400 font-bold">Failed to load match info.</p>
-                </div>
-              )}
+              ) : null}
             </div>
             
             <div className="p-4 bg-slate-950/50 border-t border-slate-800 flex justify-end">

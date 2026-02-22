@@ -155,12 +155,20 @@ export async function getMatchInfo(matchId: string) {
   const url = `https://api.cricapi.com/v1/match_info?apikey=${API_KEY}&id=${matchId}`;
   
   try {
-    const res = await fetch(url, { next: { revalidate: 60 } }); // Cache for 1 minute
+    // cache: 'no-store' — server actions cannot use next.revalidate (that's for
+    // Server Components / Route Handlers only). Always fetch fresh in an action.
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) {
+      return { status: 'failure', reason: `HTTP ${res.status} ${res.statusText}` };
+    }
     const data = await res.json();
+    if (data.status !== 'success') {
+      return { status: 'failure', reason: data.reason || data.message || 'API returned failure' };
+    }
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching match info:', error);
-    return { status: 'failure', reason: 'Failed to fetch match info' };
+    return { status: 'failure', reason: error?.message || 'Network error' };
   }
 }
 
