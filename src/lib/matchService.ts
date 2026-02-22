@@ -1,4 +1,7 @@
 import { createClient } from './supabase/server';
+import { getActualMargin } from './utils';
+
+export { getActualMargin };
 
 const API_KEY = '0d758f82-8029-4904-8339-a19df7e9edd3';
 const SERIES_ID = '0cdf6736-ad9b-4e95-a647-5ee3a99c5510'; // ICC Men's T20 World Cup 2026
@@ -25,20 +28,36 @@ export async function syncMatches() {
         continue;
       }
       
-      let winner = m.winner || null;
-      if (!winner && m.status && m.status.includes(' won by ')) {
-        winner = m.status.split(' won by ')[0];
-      }
-      
+      // series_info often returns a short status like "Match ended" without the
+      // full result. Fetch match_info for every finished match so we get the
+      // accurate status ("England won by 51 runs") and winner fields.
+      let winner: string | null = m.winner || null;
+      let detailedStatus: string = m.status;
       let matchScore = null;
+
       if (m.matchEnded) {
         try {
           const res = await fetch(`https://api.cricapi.com/v1/match_info?apikey=${API_KEY}&id=${m.id}`);
           const json = await res.json();
-          matchScore = json.data?.score || null;
+          if (json.status === 'success' && json.data) {
+            matchScore = json.data.score || null;
+            // Prefer the detailed status from match_info
+            if (json.data.status) detailedStatus = json.data.status;
+            // Prefer explicit winner field, then derive from status
+            if (json.data.winner) {
+              winner = json.data.winner;
+            } else if (!winner && detailedStatus.includes(' won by ')) {
+              winner = detailedStatus.split(' won by ')[0];
+            }
+          }
         } catch (err) {
-          console.error('Error fetching full match score:', err);
+          console.error('Error fetching full match info:', err);
         }
+      }
+
+      // Fallback: derive winner from series_info status if still null
+      if (!winner && m.status && m.status.includes(' won by ')) {
+        winner = m.status.split(' won by ')[0];
       }
 
       const matchData: any = {
@@ -47,7 +66,7 @@ export async function syncMatches() {
         team2: m.teams[1],
         seriesName: seriesName,
         dateTimeGMT: new Date(m.dateTimeGMT).toISOString(),
-        status: m.status,
+        status: detailedStatus,
         matchType: m.matchType,
         venue: m.venue,
         winner: winner,
@@ -67,47 +86,6 @@ export async function syncMatches() {
   } catch (error) {
     console.error('Sync error:', error);
   }
-}
-
-export function getActualMargin(status: string | null): string | null {
-  if (!status || typeof status !== 'string') return null;
-  
-  try {
-    // 1. Check for previously calculated margin in status parentheses
-    const parenthesized = status.match(/\((Narrow|Comfortable|Easy|Thrashing)\)/i);
-    if (parenthesized) return parenthesized[1];
-
-    const statusLower = status.toLowerCase();
-    
-    // Super Over is always Narrow
-    if (statusLower.includes('super over')) {
-      return 'Narrow';
-    }
-
-    // Winner Batted First (Runs)
-    const runsMatch = status.match(/won by (\d+) runs?/i);
-    if (runsMatch) {
-      const runs = parseInt(runsMatch[1], 10);
-      if (runs <= 9) return 'Narrow';
-      if (runs <= 24) return 'Comfortable';
-      if (runs <= 39) return 'Easy';
-      return 'Thrashing';
-    }
-    
-    // Winner Batted Second (Wickets Fallback - preferred and correct calculations are stored during sync)
-    const wktsMatch = status.match(/won by (\d+) wkts?/i) || status.match(/won by (\d+) wickets?/i);
-    if (wktsMatch) {
-      const wickets = parseInt(wktsMatch[1], 10);
-      if (wickets >= 9) return 'Thrashing';
-      if (wickets >= 6) return 'Easy';
-      if (wickets >= 3) return 'Comfortable';
-      return 'Narrow';
-    }
-  } catch (err) {
-    console.error('Error parsing margin:', err);
-  }
-  
-  return null;
 }
 
 export async function updatePoints(userId?: string) {

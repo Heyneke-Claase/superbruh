@@ -1,8 +1,9 @@
 'use server'
 
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { updatePoints } from '@/lib/matchService';
+import { updatePoints, syncMatches } from '@/lib/matchService';
 
 async function getUserId() {
   const supabase = await createClient();
@@ -192,3 +193,11 @@ export async function deleteLeague(leagueId: string) {
   redirect('/leagues');
 }
 
+export async function forceSync() {
+  const userId = await getUserId();
+  if (!userId) return;
+
+  // Only allow authenticated users to trigger a manual sync
+  await syncMatches();
+  revalidatePath('/leagues', 'layout');
+}

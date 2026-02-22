@@ -7,6 +7,7 @@ import { getCountryCode } from '@/lib/countryMap';
 import MatchInfo from '@/components/MatchInfo';
 import ScrollToMatch from '@/components/ScrollToMatch';
 import { getActualMargin } from '@/lib/matchService';
+import LiveRefresh from '@/components/LiveRefresh';
 
 export default async function PicksPage({ params }: { params: Promise<{ id: string }> | any }) {
   const { id } = await params;
@@ -81,6 +82,7 @@ export default async function PicksPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8">
+      <LiveRefresh intervalMs={30_000} />
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0">
           <Link href={`/leagues/${id}`} prefetch={true} className="text-yellow-400 hover:underline">← Back to Fixtures</Link>

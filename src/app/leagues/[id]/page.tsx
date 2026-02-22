@@ -3,11 +3,13 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import PredictionForm from '@/components/PredictionForm';
 import { createClient } from '@/lib/supabase/server';
+import LiveRefresh from '@/components/LiveRefresh';
 import ReactCountryFlag from 'react-country-flag';
 import { getCountryCode } from '@/lib/countryMap';
 import MatchInfo from '@/components/MatchInfo';
 import RemoveMemberButton from '@/components/RemoveMemberButton';
 import DeleteLeagueButton from '@/components/DeleteLeagueButton';
+import ForceSyncButton from '@/components/ForceSyncButton';
 import { getActualMargin } from '@/lib/matchService';
 
 export default async function LeagueDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -55,10 +57,13 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8">
+      {/* Refresh every 30 s so match results appear as soon as they finish */}
+      <LiveRefresh intervalMs={30_000} />
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0">
           <div className="flex items-center gap-4">
             <Link href="/leagues" prefetch={true} className="text-yellow-400 hover:underline">← Back to Leagues</Link>
+            <ForceSyncButton />
             {isOwner && (
               <DeleteLeagueButton leagueId={id} leagueName={league.name} />
             )}

@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import LiveRefresh from '@/components/LiveRefresh';
 
 export default async function LeaderboardPage({ params }: { params: Promise<{ id: string }> | any }) {
   const { id } = await params;
@@ -19,6 +20,8 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ id
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8">
+      {/* Refresh every 30 s so points update as soon as a match ends */}
+      <LiveRefresh intervalMs={30_000} />
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0">
           <Link href={`/leagues/${id}`} prefetch={true} className="text-yellow-400 hover:underline">← Back to Fixtures</Link>

@@ -3,36 +3,7 @@
 import { useState } from 'react';
 import { getMatchInfo } from '@/app/actions';
 import { Info, X, Loader2 } from 'lucide-react';
-
-// We duplicate the margin logic here to avoid importing server-only code into a client component
-function getActualMargin(status: string | null): string | null {
-  if (!status || typeof status !== 'string') return null;
-  
-  try {
-    // 1. Check for previously calculated margin in status parentheses
-    const parenthesized = status.match(/\((Narrow|Comfortable|Easy|Thrashing)\)/i);
-    if (parenthesized) return parenthesized[1];
-
-    const statusLower = status.toLowerCase();
-    
-    const wktsMatch = status.match(/won by (\d+) wkts?/i) || status.match(/won by (\d+) wickets?/i);
-    if (wktsMatch) {
-      const wkts = parseInt(wktsMatch[1], 10);
-      if (wkts <= 2) return 'Narrow';
-      if (wkts <= 5) return 'Comfortable';
-      if (wkts <= 8) return 'Easy';
-      return 'Thrashing';
-    }
-    
-    if (status.toLowerCase().includes('super over')) {
-      return 'Narrow';
-    }
-  } catch (err) {
-    console.error('Error parsing margin:', err);
-  }
-  
-  return null;
-}
+import { getActualMargin } from '@/lib/utils';
 
 interface MatchInfoProps {
   matchId: string;
