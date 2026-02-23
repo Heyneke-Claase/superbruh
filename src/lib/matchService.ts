@@ -20,6 +20,15 @@ export async function syncMatches() {
 
     const matches = result.data.matchList;
 
+    // Load already-resolved matches from DB so we don't re-fetch their match_info
+    // every single cron tick — this saves API credits significantly.
+    const { data: resolvedInDb } = await supabase
+      .from('Match')
+      .select('id')
+      .eq('matchEnded', true)
+      .not('winner', 'is', null);
+    const resolvedIds = new Set((resolvedInDb || []).map((r: any) => r.id));
+
     for (const m of matches) {
       const seriesName = "ICC Men's T20 World Cup 2026";
       
@@ -32,7 +41,8 @@ export async function syncMatches() {
       // the game finishes. Fetch match_info whenever:
       //   (a) series_info says matchEnded/matchStarted, OR
       //   (b) the scheduled UTC time was >4 hours ago (enough for a T20 to finish)
-      // This ensures we always get the accurate status and winner.
+      // BUT skip the extra API call if the DB already has a resolved result for
+      // this match — no point re-fetching what we already know.
       let winner: string | null = m.winner || null;
       let detailedStatus: string = m.status;
       let matchScore = null;
@@ -41,7 +51,8 @@ export async function syncMatches() {
 
       const scheduledAt = new Date(m.dateTimeGMT).getTime();
       const fourHoursAgo = Date.now() - 4 * 60 * 60 * 1000;
-      const shouldFetchDetail = m.matchEnded || m.matchStarted || scheduledAt < fourHoursAgo;
+      const alreadyResolved = resolvedIds.has(m.id);
+      const shouldFetchDetail = !alreadyResolved && (m.matchEnded || m.matchStarted || scheduledAt < fourHoursAgo);
 
       if (shouldFetchDetail) {
         try {
@@ -106,6 +117,10 @@ export async function syncMatches() {
       if (matchScore) {
         matchData.score = matchScore;
       }
+
+      // Skip upsert for matches already fully resolved in the DB — series_info
+      // keeps returning matchEnded=false for them and would overwrite our data.
+      if (alreadyResolved) continue;
 
       await supabase.from('Match').upsert(matchData);
     }
