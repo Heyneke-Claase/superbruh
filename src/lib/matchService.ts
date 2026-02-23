@@ -69,10 +69,21 @@ export async function syncMatches() {
         status: detailedStatus,
         matchType: m.matchType,
         venue: m.venue,
-        winner: winner,
         matchStarted: m.matchStarted,
         matchEnded: m.matchEnded,
       };
+
+      // Only set winner when we actually resolved one — never overwrite a valid
+      // winner already in the DB with null just because the API returned nothing.
+      if (winner !== null) {
+        matchData.winner = winner;
+      }
+
+      // Last-chance derivation: if winner is still null but the stored status
+      // contains the result, extract it so the DB is always consistent.
+      if (winner === null && detailedStatus.includes(' won by ')) {
+        matchData.winner = detailedStatus.split(' won by ')[0].trim();
+      }
 
       if (matchScore) {
         matchData.score = matchScore;
@@ -122,10 +133,19 @@ export async function updatePoints(userId?: string) {
       for (const pred of predictions) {
         const match = finishedMatches.find(m => m.id === pred.matchId);
         if (match) {
+          // Use stored winner; fall back to deriving it from the status string
+          // so that matches whose winner field was accidentally cleared still
+          // award points correctly.
+          const effectiveWinner =
+            match.winner ||
+            (match.status?.includes(' won by ')
+              ? match.status.split(' won by ')[0].trim()
+              : null);
+
           const predictedTeam = pred.predictedWinner?.split('|')[0];
           const predictedMargin = pred.predictedWinner?.split('|')[1];
           
-          if (match.winner === predictedTeam) {
+          if (effectiveWinner && effectiveWinner === predictedTeam) {
             points += 1; // 1 point for correct team
             
             const actualMargin = getActualMargin(match.status);
