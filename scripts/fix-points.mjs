@@ -1,39 +1,29 @@
 /**
  * Standalone script to:
- * 1. Fix matches that have matchEnded=true but winner=null by deriving the
- *    winner from the status string.
- * 2. Recalculate every membership's points from scratch using both the stored
- *    winner AND the status-derived winner as a fallback.
+ * 1. Fetch match_info from the API for any match that should have ended
+ *    (scheduled > 4 hours ago) but still has matchEnded=false in the DB.
+ * 2. Fix matches that have matchEnded=true but winner=null.
+ * 3. Recalculate every membership's points from scratch.
  *
  * Run with:  node scripts/fix-points.mjs
  */
 
-import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { createClient } from '@supabase/supabase-js';
 
-// ---------- Load .env.local ----------
-// Use process.cwd() so the script works when run from the project root
-const envPath = resolve(process.cwd(), '.env.local');
-const envContent = readFileSync(envPath, 'utf-8');
-// Parse every key=value line (handles both LF and CRLF)
-for (const line of envContent.split(/\r?\n/)) {
-  const eqIdx = line.indexOf('=');
-  if (eqIdx < 1 || line[0] === '#') continue;
-  const k = line.slice(0, eqIdx).trim();
-  const v = line.slice(eqIdx + 1).trim();
-  if (k) process.env[k] = v;
+const env = readFileSync(resolve(process.cwd(), '.env.local'), 'utf-8');
+for (const line of env.split(/\r?\n/)) {
+  const eq = line.indexOf('=');
+  if (eq > 0 && line[0] !== '#') process.env[line.slice(0, eq).trim()] = line.slice(eq + 1).trim();
 }
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+if (!SUPABASE_URL || !SUPABASE_KEY) { console.error('Missing Supabase env vars'); process.exit(1); }
 
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY');
-  process.exit(1);
-}
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+const API_KEY = '0d758f82-8029-4904-8339-a19df7e9edd3';
 
 // ---------- Helpers ----------
 function getActualMargin(status) {
@@ -66,53 +56,102 @@ function winnerFromStatus(status) {
   return null;
 }
 
-// ---------- Step 1: Fix null winners in DB ----------
-console.log('Step 1: Fixing matches with matchEnded=true but winner=null …');
-const { data: brokenMatches, error: bmErr } = await supabase
-  .from('Match')
-  .select('id, status, winner')
-  .eq('matchEnded', true)
-  .is('winner', null);
+// ---------- Step 1: Fetch match_info for stale matches ----------
+console.log('Step 1: Fetching live match_info for matches that should have ended …');
 
-if (bmErr) { console.error('Error querying matches:', bmErr); process.exit(1); }
+const fourHoursAgo = Date.now() - 4 * 60 * 60 * 1000;
+
+const { data: staleMatches } = await sb
+  .from('Match')
+  .select('id, team1, team2, dateTimeGMT, matchEnded, winner, status')
+  .eq('matchEnded', false)
+  .lt('dateTimeGMT', new Date(fourHoursAgo).toISOString());
+
+console.log(`  Found ${(staleMatches || []).length} stale (not-ended) matches to check.`);
+
+for (const m of (staleMatches || [])) {
+  console.log(`\n  Checking: ${m.team1} vs ${m.team2} (${m.dateTimeGMT.slice(0, 16)})`);
+  try {
+    const res = await fetch(`https://api.cricapi.com/v1/match_info?apikey=${API_KEY}&id=${m.id}`);
+    const json = await res.json();
+    if (json.status !== 'success' || !json.data) {
+      console.log(`    API returned: ${json.status} / ${json.reason || 'unknown'}`);
+      continue;
+    }
+    const d = json.data;
+    console.log(`    API matchEnded: ${d.matchEnded}  |  status: ${d.status}`);
+    console.log(`    API winner: ${d.winner ?? 'null'}`);
+
+    if (!d.matchEnded) {
+      console.log('    Still in progress or API has no result yet — skipping.');
+      continue;
+    }
+
+    const winner = d.winner || winnerFromStatus(d.status) || winnerFromStatus(m.status);
+    let finalStatus = d.status || m.status;
+    // Embed margin classification if not already present
+    if (finalStatus && !finalStatus.match(/\((Narrow|Comfortable|Easy|Thrashing)\)/i)) {
+      const margin = getActualMargin(finalStatus);
+      if (margin) finalStatus = `${finalStatus} (${margin})`;
+    }
+    const update = {
+      matchEnded: true,
+      matchStarted: true,
+      status: finalStatus,
+    };
+    if (winner) update.winner = winner;
+
+    const { error } = await sb.from('Match').update(update).eq('id', m.id);
+    if (error) {
+      console.log(`    ✗ DB update failed: ${error.message}`);
+    } else {
+      console.log(`    ✓ Updated: matchEnded=true, winner="${winner ?? 'null'}"`);
+    }
+  } catch (err) {
+    console.error(`    Error: ${err.message}`);
+  }
+}
+
+// ---------- Step 2: Embed margin classification in any ended match missing it ----------
+console.log('\nStep 2: Embedding margin brackets in ended matches …');
+const { data: endedMatches } = await sb.from('Match').select('id, status, winner').eq('matchEnded', true);
+let embedded = 0;
+for (const m of (endedMatches || [])) {
+  if (!m.status || m.status.match(/\((Narrow|Comfortable|Easy|Thrashing)\)/i)) continue;
+  const margin = getActualMargin(m.status);
+  if (!margin) continue;
+  const newStatus = `${m.status} (${margin})`;
+  const { error } = await sb.from('Match').update({ status: newStatus }).eq('id', m.id);
+  if (!error) { console.log(`  ✓ ${m.status} → ${newStatus}`); embedded++; }
+}
+console.log(`  Embedded margin in ${embedded} matches.\n`);
+
+// ---------- Step 3: Fix any remaining null winners ----------
+console.log('Step 3: Fixing matchEnded=true matches with missing winners …');
+const { data: brokenMatches } = await sb.from('Match').select('id, status, winner').eq('matchEnded', true).is('winner', null);
 
 let fixed = 0;
 for (const m of (brokenMatches || [])) {
   const derived = winnerFromStatus(m.status);
   if (derived) {
-    const { error } = await supabase.from('Match').update({ winner: derived }).eq('id', m.id);
-    if (error) {
-      console.error(`  ✗ Could not fix match ${m.id}:`, error.message);
-    } else {
-      console.log(`  ✓ Fixed match ${m.id}: status="${m.status}" → winner="${derived}"`);
-      fixed++;
+    let fixedStatus = m.status;
+    if (!fixedStatus.match(/\((Narrow|Comfortable|Easy|Thrashing)\)/i)) {
+      const margin = getActualMargin(fixedStatus);
+      if (margin) fixedStatus = `${fixedStatus} (${margin})`;
     }
-  } else {
-    console.log(`  ~ Match ${m.id} status="${m.status}" — cannot derive winner, skipping`);
+    const { error } = await sb.from('Match').update({ winner: derived, status: fixedStatus }).eq('id', m.id);
+    if (!error) { console.log(`  ✓ Fixed ${m.id}: "${m.status}" → winner="${derived}", status="${fixedStatus}"`); fixed++; }
   }
 }
 console.log(`  Fixed ${fixed} / ${(brokenMatches || []).length} null-winner matches.\n`);
 
-// ---------- Step 2: Recalculate all member points ----------
-console.log('Step 2: Recalculating points for all memberships …');
-const { data: finishedMatches, error: fmErr } = await supabase
-  .from('Match')
-  .select('id, winner, status')
-  .eq('matchEnded', true);
-
-if (fmErr) { console.error('Error querying finished matches:', fmErr); process.exit(1); }
-
-const { data: memberships, error: memErr } = await supabase
-  .from('Membership')
-  .select('id, userId');
-
-if (memErr) { console.error('Error querying memberships:', memErr); process.exit(1); }
+// ---------- Step 4: Recalculate all member points ----------
+console.log('Step 4: Recalculating points for all memberships …');
+const { data: finishedMatches } = await sb.from('Match').select('id, winner, status').eq('matchEnded', true);
+const { data: memberships } = await sb.from('Membership').select('id, userId');
 
 for (const membership of (memberships || [])) {
-  const { data: predictions } = await supabase
-    .from('Prediction')
-    .select('matchId, predictedWinner')
-    .eq('userId', membership.userId);
+  const { data: predictions } = await sb.from('Prediction').select('matchId, predictedWinner').eq('userId', membership.userId);
 
   let points = 0;
   for (const pred of (predictions || [])) {
@@ -126,21 +165,15 @@ for (const membership of (memberships || [])) {
     if (effectiveWinner && effectiveWinner === predictedTeam) {
       points += 1;
       const actualMargin = getActualMargin(match.status);
-      if (actualMargin && predictedMargin === actualMargin) {
-        points += 1;
-      }
+      if (actualMargin && predictedMargin === actualMargin) points += 1;
     }
   }
 
-  const { error: upErr } = await supabase
-    .from('Membership')
-    .update({ points })
-    .eq('id', membership.id);
-
-  if (upErr) {
-    console.error(`  ✗ Could not update membership ${membership.id}:`, upErr.message);
+  const { error } = await sb.from('Membership').update({ points }).eq('id', membership.id);
+  if (error) {
+    console.error(`  ✗ Membership ${membership.id}: ${error.message}`);
   } else {
-    console.log(`  ✓ Membership ${membership.id} (user ${membership.userId}) → ${points} pts`);
+    console.log(`  ✓ Membership ${membership.id} (user ${membership.userId.slice(0, 8)}) → ${points} pts`);
   }
 }
 

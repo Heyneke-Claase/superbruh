@@ -28,26 +28,37 @@ export async function syncMatches() {
         continue;
       }
       
-      // series_info often returns a short status like "Match ended" without the
-      // full result. Fetch match_info for every finished match so we get the
-      // accurate status ("England won by 51 runs") and winner fields.
+      // series_info often returns stale data — matchEnded stays false even after
+      // the game finishes. Fetch match_info whenever:
+      //   (a) series_info says matchEnded/matchStarted, OR
+      //   (b) the scheduled UTC time was >4 hours ago (enough for a T20 to finish)
+      // This ensures we always get the accurate status and winner.
       let winner: string | null = m.winner || null;
       let detailedStatus: string = m.status;
       let matchScore = null;
+      let matchEnded: boolean = m.matchEnded ?? false;
+      let matchStarted: boolean = m.matchStarted ?? false;
 
-      if (m.matchEnded) {
+      const scheduledAt = new Date(m.dateTimeGMT).getTime();
+      const fourHoursAgo = Date.now() - 4 * 60 * 60 * 1000;
+      const shouldFetchDetail = m.matchEnded || m.matchStarted || scheduledAt < fourHoursAgo;
+
+      if (shouldFetchDetail) {
         try {
           const res = await fetch(`https://api.cricapi.com/v1/match_info?apikey=${API_KEY}&id=${m.id}`);
           const json = await res.json();
           if (json.status === 'success' && json.data) {
             matchScore = json.data.score || null;
+            // Use match_info fields as they are more up-to-date than series_info
+            if (json.data.matchEnded !== undefined) matchEnded = json.data.matchEnded;
+            if (json.data.matchStarted !== undefined) matchStarted = json.data.matchStarted;
             // Prefer the detailed status from match_info
             if (json.data.status) detailedStatus = json.data.status;
             // Prefer explicit winner field, then derive from status
             if (json.data.winner) {
               winner = json.data.winner;
             } else if (!winner && detailedStatus.includes(' won by ')) {
-              winner = detailedStatus.split(' won by ')[0];
+              winner = detailedStatus.split(' won by ')[0].trim();
             }
           }
         } catch (err) {
@@ -57,7 +68,14 @@ export async function syncMatches() {
 
       // Fallback: derive winner from series_info status if still null
       if (!winner && m.status && m.status.includes(' won by ')) {
-        winner = m.status.split(' won by ')[0];
+        winner = m.status.split(' won by ')[0].trim();
+      }
+
+      // Embed margin classification into status if not already present.
+      // e.g. "England won by 51 runs" → "England won by 51 runs (Thrashing)"
+      if (matchEnded && !detailedStatus.match(/\((Narrow|Comfortable|Easy|Thrashing)\)/i)) {
+        const margin = getActualMargin(detailedStatus);
+        if (margin) detailedStatus = `${detailedStatus} (${margin})`;
       }
 
       const matchData: any = {
@@ -69,8 +87,8 @@ export async function syncMatches() {
         status: detailedStatus,
         matchType: m.matchType,
         venue: m.venue,
-        matchStarted: m.matchStarted,
-        matchEnded: m.matchEnded,
+        matchStarted,
+        matchEnded,
       };
 
       // Only set winner when we actually resolved one — never overwrite a valid
