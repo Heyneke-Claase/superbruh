@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { getActualMargin } from '@/lib/matchService';
 import LiveRefresh from '@/components/LiveRefresh';
 
 export default async function LeaderboardPage({ params }: { params: Promise<{ id: string }> | any }) {
@@ -10,13 +11,59 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ id
 
   const { data: league } = await supabase
     .from('League')
-    .select('id, name, members:Membership(id, userId, points, user:User(id, name, image))')
+    .select('id, name, members:Membership(id, userId, user:User(id, name, image))')
     .eq('id', id)
     .single();
 
   if (!league) redirect('/leagues');
 
-  const sortedMembers = (league.members as any[] || []).sort((a: any, b: any) => b.points - a.points);
+  const memberUserIds = (league.members as any[] || []).map((m: any) => m.userId);
+
+  // Fetch all finished matches and all predictions for league members in parallel.
+  // Points are computed here directly from DB data — no API calls, no stale cache.
+  const [{ data: finishedMatches }, { data: allPredictions }] = await Promise.all([
+    supabase
+      .from('Match')
+      .select('id, winner, status')
+      .eq('matchEnded', true),
+    supabase
+      .from('Prediction')
+      .select('matchId, userId, predictedWinner')
+      .in('userId', memberUserIds),
+  ]);
+
+  // Build lookup: userId -> total points, computed fresh from match results + picks
+  const pointsMap = new Map<string, number>();
+  for (const userId of memberUserIds) {
+    let points = 0;
+    const userPredictions = (allPredictions || []).filter((p: any) => p.userId === userId);
+    for (const pred of userPredictions) {
+      const match = (finishedMatches || []).find((m: any) => m.id === pred.matchId);
+      if (!match) continue;
+
+      const effectiveWinner =
+        match.winner ||
+        (match.status?.includes(' won by ')
+          ? match.status.split(' won by ')[0].trim()
+          : null);
+
+      const predictedTeam = pred.predictedWinner?.split('|')[0];
+      const predictedMargin = pred.predictedWinner?.split('|')[1];
+
+      if (effectiveWinner && effectiveWinner === predictedTeam) {
+        points += 1;
+        const actualMargin = getActualMargin(match.status);
+        if (actualMargin && predictedMargin === actualMargin) {
+          points += 1;
+        }
+      }
+    }
+    pointsMap.set(userId, points);
+  }
+
+  const sortedMembers = (league.members as any[] || [])
+    .map((m: any) => ({ ...m, points: pointsMap.get(m.userId) ?? 0 }))
+    .sort((a: any, b: any) => b.points - a.points);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8">

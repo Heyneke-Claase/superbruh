@@ -50,9 +50,12 @@ export async function syncMatches() {
       let matchStarted: boolean = m.matchStarted ?? false;
 
       const scheduledAt = new Date(m.dateTimeGMT).getTime();
-      const fourHoursAgo = Date.now() - 4 * 60 * 60 * 1000;
+      // T20s finish within ~3 hours of start. Using 3 h means the cron catches
+      // the result at most one 30-min tick after the game ends even when the
+      // series_info API is stale and still reports matchStarted/matchEnded=false.
+      const threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
       const alreadyResolved = resolvedIds.has(m.id);
-      const shouldFetchDetail = !alreadyResolved && (m.matchEnded || m.matchStarted || scheduledAt < fourHoursAgo);
+      const shouldFetchDetail = !alreadyResolved && (m.matchEnded || m.matchStarted || scheduledAt <= threeHoursAgo);
 
       if (shouldFetchDetail) {
         try {
