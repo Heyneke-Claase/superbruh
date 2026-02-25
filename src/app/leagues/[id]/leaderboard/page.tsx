@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getActualMargin } from '@/lib/matchService';
 import LiveRefresh from '@/components/LiveRefresh';
+import AutoSync from '@/components/AutoSync';
 
 export default async function LeaderboardPage({ params }: { params: Promise<{ id: string }> | any }) {
   const { id } = await params;
@@ -21,7 +22,7 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ id
 
   // Fetch all finished matches and all predictions for league members in parallel.
   // Points are computed here directly from DB data — no API calls, no stale cache.
-  const [{ data: finishedMatches }, { data: allPredictions }] = await Promise.all([
+  const [{ data: finishedMatches }, { data: allPredictions }, { data: unresolvedMatches }] = await Promise.all([
     supabase
       .from('Match')
       .select('id, winner, status')
@@ -30,6 +31,11 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ id
       .from('Prediction')
       .select('matchId, userId, predictedWinner')
       .in('userId', memberUserIds),
+    supabase
+      .from('Match')
+      .select('dateTimeGMT')
+      .eq('matchEnded', false)
+      .ilike('seriesName', '%World Cup%'),
   ]);
 
   // Build lookup: userId -> total points, computed fresh from match results + picks
@@ -69,6 +75,8 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ id
     <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8">
       {/* Refresh every 30 s so points update as soon as a match ends */}
       <LiveRefresh intervalMs={30_000} />
+      {/* Trigger a sync automatically whenever a match is live */}
+      <AutoSync matchTimes={(unresolvedMatches || []).map((m: any) => m.dateTimeGMT)} />
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0">
           <Link href={`/leagues/${id}`} prefetch={true} className="text-yellow-400 hover:underline">← Back to Fixtures</Link>

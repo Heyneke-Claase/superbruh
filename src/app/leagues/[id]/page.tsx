@@ -11,6 +11,7 @@ import RemoveMemberButton from '@/components/RemoveMemberButton';
 import DeleteLeagueButton from '@/components/DeleteLeagueButton';
 import ForceSyncButton from '@/components/ForceSyncButton';
 import { getActualMargin } from '@/lib/matchService';
+import AutoSync from '@/components/AutoSync';
 
 export default async function LeagueDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -59,6 +60,8 @@ export default async function LeagueDetailsPage({ params }: { params: Promise<{ 
     <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8">
       {/* Refresh every 30 s so match results appear as soon as they finish */}
       <LiveRefresh intervalMs={30_000} />
+      {/* Trigger a sync automatically whenever a match is live */}
+      <AutoSync matchTimes={(matches || []).filter((m: any) => !m.matchEnded).map((m: any) => m.dateTimeGMT)} />
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0">
           <div className="flex items-center gap-4">

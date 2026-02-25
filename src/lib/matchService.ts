@@ -50,10 +50,10 @@ export async function syncMatches() {
       let matchStarted: boolean = m.matchStarted ?? false;
 
       const scheduledAt = new Date(m.dateTimeGMT).getTime();
-      // T20s finish within ~3 hours of start. Using 3 h means the cron catches
-      // the result at most one 30-min tick after the game ends even when the
-      // series_info API is stale and still reports matchStarted/matchEnded=false.
-      const threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
+      // T20s finish within ~3.5 hours of start. Using 2 h means we start polling
+      // match_info while the game is still in progress, guaranteeing we catch the
+      // result within one sync tick of it finishing — even when series_info is stale.
+      const threeHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
       const alreadyResolved = resolvedIds.has(m.id);
       const shouldFetchDetail = !alreadyResolved && (m.matchEnded || m.matchStarted || scheduledAt <= threeHoursAgo);
 
@@ -73,6 +73,12 @@ export async function syncMatches() {
               winner = json.data.winner;
             } else if (!winner && detailedStatus.includes(' won by ')) {
               winner = detailedStatus.split(' won by ')[0].trim();
+            }
+            // cricapi sometimes returns matchEnded=false even after the game ends.
+            // If the status string already contains a result, trust it as ended.
+            if (!matchEnded && (detailedStatus.includes(' won by ') || detailedStatus.toLowerCase().includes('super over'))) {
+              matchEnded = true;
+              matchStarted = true;
             }
           }
         } catch (err) {
