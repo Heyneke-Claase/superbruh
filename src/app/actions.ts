@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { updatePoints, syncMatches } from '@/lib/matchService';
+import { updatePoints, syncMatches, getActualMargin } from '@/lib/matchService';
 
 async function getUserId() {
   const supabase = await createClient();
@@ -165,6 +165,43 @@ export async function getMatchInfo(matchId: string) {
     if (data.status !== 'success') {
       return { status: 'failure', reason: data.reason || data.message || 'API returned failure' };
     }
+
+    // If the match has ended, persist the result to the DB immediately so the
+    // leaderboard and all-picks pages reflect it on their next render — without
+    // waiting for the cron job to run.
+    if (data.data?.matchEnded) {
+      const d = data.data;
+
+      // Derive winner from the explicit field or parse from status string
+      let winner: string | null = d.winner || null;
+      if (!winner && d.status?.includes(' won by ')) {
+        winner = d.status.split(' won by ')[0].trim();
+      }
+
+      // Embed margin category into status string if not already there
+      let status: string = d.status || '';
+      if (status && !status.match(/\((Narrow|Comfortable|Easy|Thrashing)\)/i)) {
+        const margin = getActualMargin(status);
+        if (margin) status = `${status} (${margin})`;
+      }
+
+      const supabase = await createClient();
+
+      // Only update fields we have fresh data for — never overwrite a good winner with null
+      const update: Record<string, unknown> = {
+        matchEnded: true,
+        matchStarted: true,
+        status,
+      };
+      if (winner) update.winner = winner;
+      if (d.score) update.score = d.score;
+
+      await supabase.from('Match').update(update).eq('id', matchId);
+
+      // Revalidate all league pages so the next render picks up the new data
+      revalidatePath('/leagues', 'layout');
+    }
+
     return data;
   } catch (error: any) {
     console.error('Error fetching match info:', error);
