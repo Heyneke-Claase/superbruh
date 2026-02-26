@@ -75,9 +75,15 @@ async function syncMatchesInternal(supabase: any) {
     console.log(`[syncMatchesInternal] Processing match ${m.id}: ${m.teams[0]} vs ${m.teams[1]}, matchEnded=${matchEnded}, status="${detailedStatus}"`);
 
     const scheduledAt = new Date(m.dateTimeGMT).getTime();
-    const threeHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
+    const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
     const alreadyResolved = resolvedIds.has(m.id);
-    const shouldFetchDetail = !alreadyResolved && (m.matchEnded || m.matchStarted || scheduledAt <= threeHoursAgo);
+    
+    // ALWAYS fetch detail if match is 2+ hours past start time (catches completed matches even if series_info is stale)
+    // Also fetch if match has started/ended according to series_info
+    // Skip only if already resolved (to save API calls on truly finished matches)
+    const shouldFetchDetail = !alreadyResolved && (m.matchEnded || m.matchStarted || scheduledAt <= twoHoursAgo);
+    
+    console.log(`[syncMatchesInternal] Match ${m.id}: scheduled=${new Date(scheduledAt).toISOString()}, twoHoursAgo=${new Date(twoHoursAgo).toISOString()}, shouldFetch=${shouldFetchDetail}, alreadyResolved=${alreadyResolved}`);
 
     if (shouldFetchDetail) {
       try {
@@ -175,12 +181,12 @@ export async function syncMatches() {
 async function scoreUnscoredMatches(supabase: any): Promise<number> {
   console.log('[scoreUnscoredMatches] Looking for completed unscored matches...');
   
-  // Find completed matches that haven't been scored yet
+  // Find matches that are marked as ended but haven't been scored yet
   const { data: matchesToScore, error: matchError } = await supabase
     .from('Match')
-    .select('id, winner, status')
+    .select('id, winner, status, scoredAt')
     .eq('matchEnded', true)
-    .is('scoredAt', null);
+    .or('scoredAt.is.null');
 
   if (matchError) {
     console.error('[scoreUnscoredMatches] Error fetching matches:', matchError);
@@ -195,6 +201,7 @@ async function scoreUnscoredMatches(supabase: any): Promise<number> {
   }
   
   console.log(`[scoreUnscoredMatches] Match IDs to score: ${matchesToScore.map((m: any) => m.id).join(', ')}`);
+  console.log(`[scoreUnscoredMatches] Match details:`, matchesToScore.map((m: any) => ({id: m.id, winner: m.winner, scoredAt: m.scoredAt})));
 
   console.log(`Scoring ${matchesToScore.length} newly completed matches...`);
 
