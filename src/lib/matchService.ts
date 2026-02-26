@@ -38,15 +38,17 @@ export async function syncAndScore(): Promise<{ synced: number; scored: number }
 }
 
 async function syncMatchesInternal(supabase: any) {
+  console.log('[syncMatchesInternal] Fetching matches from API...');
   const response = await fetch(API_URL);
   const result = await response.json();
 
   if (result.status !== 'success') {
-    console.error('API Error:', result.reason);
+    console.error('[syncMatchesInternal] API Error:', result.reason);
     return;
   }
 
   const matches = result.data.matchList;
+  console.log(`[syncMatchesInternal] Found ${matches.length} matches from API`);
 
   // Load already-resolved matches from DB so we don't re-fetch their match_info
   const { data: resolvedInDb } = await supabase
@@ -69,6 +71,8 @@ async function syncMatchesInternal(supabase: any) {
     let matchScore = null;
     let matchEnded: boolean = m.matchEnded ?? false;
     let matchStarted: boolean = m.matchStarted ?? false;
+    
+    console.log(`[syncMatchesInternal] Processing match ${m.id}: ${m.teams[0]} vs ${m.teams[1]}, matchEnded=${matchEnded}, status="${detailedStatus}"`);
 
     const scheduledAt = new Date(m.dateTimeGMT).getTime();
     const threeHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
@@ -77,6 +81,7 @@ async function syncMatchesInternal(supabase: any) {
 
     if (shouldFetchDetail) {
       try {
+        console.log(`[syncMatchesInternal] Fetching detailed info for match ${m.id}`);
         const res = await fetch(`https://api.cricapi.com/v1/match_info?apikey=${API_KEY}&id=${m.id}`);
         const json = await res.json();
         if (json.status === 'success' && json.data) {
@@ -93,9 +98,12 @@ async function syncMatchesInternal(supabase: any) {
             matchEnded = true;
             matchStarted = true;
           }
+          console.log(`[syncMatchesInternal] Match ${m.id} detail: matchEnded=${matchEnded}, winner=${winner}, status="${detailedStatus}"`);
+        } else {
+          console.log(`[syncMatchesInternal] Match ${m.id} detail fetch failed: ${json.status}`);
         }
       } catch (err) {
-        console.error('Error fetching full match info:', err);
+        console.error('[syncMatchesInternal] Error fetching full match info:', err);
       }
     }
 
@@ -133,10 +141,21 @@ async function syncMatchesInternal(supabase: any) {
       matchData.score = matchScore;
     }
 
-    if (alreadyResolved) continue;
+    if (alreadyResolved) {
+      console.log(`[syncMatchesInternal] Skipping match ${m.id} - already resolved in DB`);
+      continue;
+    }
 
-    await supabase.from('Match').upsert(matchData);
+    console.log(`[syncMatchesInternal] Upserting match ${m.id} with matchEnded=${matchEnded}, winner=${winner}`);
+    const { error: upsertError } = await supabase.from('Match').upsert(matchData);
+    if (upsertError) {
+      console.error(`[syncMatchesInternal] Error upserting match ${m.id}:`, upsertError);
+    } else {
+      console.log(`[syncMatchesInternal] Successfully upserted match ${m.id}`);
+    }
   }
+  
+  console.log('[syncMatchesInternal] Sync complete');
 }
 
 // Legacy wrapper for backward compatibility - now uses the new syncAndScore
