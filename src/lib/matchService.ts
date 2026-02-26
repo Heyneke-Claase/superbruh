@@ -3,8 +3,8 @@ import { getActualMargin } from './utils';
 
 export { getActualMargin };
 
-const API_KEY = '0d758f82-8029-4904-8339-a19df7e9edd3';
-const SERIES_ID = '0cdf6736-ad9b-4e95-a647-5ee3a99c5510'; // ICC Men's T20 World Cup 2026
+const API_KEY = 'a8f16eab-0f85-45c8-8477-10de77bb60d1';
+const SERIES_ID = 'd7dcef2e-6391-4039-b7b1-15fd3e354432';
 const API_URL = `https://api.cricapi.com/v1/series_info?apikey=${API_KEY}&id=${SERIES_ID}`;
 
 /**

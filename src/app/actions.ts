@@ -151,7 +151,7 @@ export async function removeMember(leagueId: string, targetUserId: string) {
 }
 
 export async function getMatchInfo(matchId: string) {
-  const API_KEY = '0d758f82-8029-4904-8339-a19df7e9edd3';
+  const API_KEY = 'a8f16eab-0f85-45c8-8477-10de77bb60d1';
   const url = `https://api.cricapi.com/v1/match_info?apikey=${API_KEY}&id=${matchId}`;
   
   try {

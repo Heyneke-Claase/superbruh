@@ -9,7 +9,7 @@ interface Props {
   matchTimes: string[];
 }
 
-const RATE_LIMIT_MS = 5 * 60 * 1000; // fire at most once per 5 minutes (more frequent for scoring)
+const RATE_LIMIT_MS = 10 * 60 * 1000; // fire at most once per 10 minutes (no cron job on free tier)
 const STORAGE_KEY = 'lastAutoSync';
 
 /**

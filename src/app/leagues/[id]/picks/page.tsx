@@ -6,7 +6,7 @@ import ReactCountryFlag from 'react-country-flag';
 import { getCountryCode } from '@/lib/countryMap';
 import MatchInfo from '@/components/MatchInfo';
 import ScrollToMatch from '@/components/ScrollToMatch';
-import { getActualMargin, syncAndScore } from '@/lib/matchService';
+import { getActualMargin } from '@/lib/matchService';
 import LiveRefresh from '@/components/LiveRefresh';
 import AutoSync from '@/components/AutoSync';
 
@@ -16,14 +16,11 @@ export default async function PicksPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const supabase = await createClient();
 
-  // Trigger sync and score FIRST - this ensures any completed matches are scored
-  // before we display the picks. This is idempotent so it's safe to call on every load.
-  try {
-    await syncAndScore();
-  } catch (e) {
-    // Non-fatal - continue loading page even if sync fails
-    console.error('Background sync failed:', e);
-  }
+  // NOTE: With only 100 API hits/day, we rely on the cron job (every 15 min) for syncing.
+  // Pages display cached data. The syncAndScore() function is only called by:
+  // 1. Vercel cron job every 15 minutes
+  // 2. AutoSync component during live matches (rate-limited to once per 30 min)
+  // 3. Manual ForceSyncButton if user explicitly requests it
 
   // Fetch auth + league in parallel
   const [{ data: { user } }, { data: league }] = await Promise.all([

@@ -1,0 +1,9 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# NOTE: Netlify free tier doesn't support scheduled functions (cron jobs).
+# Use an external free cron service (cron-job.org) to ping /api/sync-and-score every 15 minutes.
