@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
     // Bust the Next.js cache for all league pages so navigating to them
     // immediately shows updated points without waiting for revalidation.
     revalidatePath('/leagues');
+    revalidatePath('/leagues/*');
 
     return NextResponse.json({ ok: true, synced: new Date().toISOString() });
   } catch (error) {

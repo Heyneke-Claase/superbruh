@@ -13,6 +13,8 @@ import ForceSyncButton from '@/components/ForceSyncButton';
 import { getActualMargin } from '@/lib/matchService';
 import AutoSync from '@/components/AutoSync';
 
+export const dynamic = 'force-dynamic';
+
 export default async function LeagueDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { getMatchInfo } from '@/app/actions';
 import { Info, X, Loader2 } from 'lucide-react';
 import { getActualMargin } from '@/lib/utils';
@@ -12,6 +13,7 @@ interface MatchInfoProps {
 }
 
 export default function MatchInfo({ matchId, team1, team2 }: MatchInfoProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [info, setInfo] = useState<any>(null);
@@ -25,6 +27,7 @@ export default function MatchInfo({ matchId, team1, team2 }: MatchInfoProps) {
       const res = await getMatchInfo(matchId);
       if (res.status === 'success') {
         setInfo(res.data);
+        router.refresh();
       } else {
         setError(res.reason || 'Unknown error');
       }
@@ -38,6 +41,7 @@ export default function MatchInfo({ matchId, team1, team2 }: MatchInfoProps) {
     const res = await getMatchInfo(matchId);
     if (res.status === 'success') {
       setInfo(res.data);
+      router.refresh();
     } else {
       setError(res.reason || 'Unknown error');
     }

@@ -6,6 +6,8 @@ import { getActualMargin } from '@/lib/matchService';
 import LiveRefresh from '@/components/LiveRefresh';
 import AutoSync from '@/components/AutoSync';
 
+export const dynamic = 'force-dynamic';
+
 export default async function LeaderboardPage({ params }: { params: Promise<{ id: string }> | any }) {
   const { id } = await params;
   const supabase = await createClient();

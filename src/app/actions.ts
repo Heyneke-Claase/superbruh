@@ -201,6 +201,7 @@ export async function getMatchInfo(matchId: string) {
       await updatePoints();
 
       revalidatePath('/leagues');
+      revalidatePath('/leagues/*');
     }
 
     return data;
@@ -246,4 +247,5 @@ export async function forceSync() {
   // Only allow authenticated users to trigger a manual sync
   await syncMatches();
   revalidatePath('/leagues');
+  revalidatePath('/leagues/*');
 }
