@@ -22,14 +22,18 @@ const API_URL = `https://api.cricapi.com/v1/series_info?apikey=${API_KEY}&id=${S
  * This is idempotent - you can run it every minute and it won't double-score.
  */
 export async function syncAndScore(): Promise<{ synced: number; scored: number }> {
+  console.log('[syncAndScore] Starting sync and score process...');
   const supabase = await createClient();
   
   // Step 1 & 2: Sync matches from API
+  console.log('[syncAndScore] Step 1: Syncing matches from API...');
   await syncMatchesInternal(supabase);
   
   // Step 3-7: Score any un-scored completed matches
+  console.log('[syncAndScore] Step 2: Scoring un-scored matches...');
   const scoredCount = await scoreUnscoredMatches(supabase);
   
+  console.log(`[syncAndScore] Complete. Scored ${scoredCount} matches.`);
   return { synced: 1, scored: scoredCount };
 }
 
@@ -150,28 +154,50 @@ export async function syncMatches() {
  * Returns the number of matches that were scored.
  */
 async function scoreUnscoredMatches(supabase: any): Promise<number> {
+  console.log('[scoreUnscoredMatches] Looking for completed unscored matches...');
+  
   // Find completed matches that haven't been scored yet
-  const { data: matchesToScore } = await supabase
+  const { data: matchesToScore, error: matchError } = await supabase
     .from('Match')
     .select('id, winner, status')
     .eq('matchEnded', true)
     .is('scoredAt', null);
 
-  if (!matchesToScore || matchesToScore.length === 0) {
+  if (matchError) {
+    console.error('[scoreUnscoredMatches] Error fetching matches:', matchError);
     return 0;
   }
+
+  console.log(`[scoreUnscoredMatches] Found ${matchesToScore?.length || 0} matches to score`);
+  
+  if (!matchesToScore || matchesToScore.length === 0) {
+    console.log('[scoreUnscoredMatches] No matches need scoring');
+    return 0;
+  }
+  
+  console.log(`[scoreUnscoredMatches] Match IDs to score: ${matchesToScore.map((m: any) => m.id).join(', ')}`);
 
   console.log(`Scoring ${matchesToScore.length} newly completed matches...`);
 
   // Get all predictions for these matches
   const matchIds = matchesToScore.map((m: any) => m.id);
-  const { data: allPredictions } = await supabase
+  console.log(`[scoreUnscoredMatches] Fetching predictions for match IDs: ${matchIds.join(', ')}`);
+  
+  const { data: allPredictions, error: predError } = await supabase
     .from('Prediction')
     .select('id, matchId, userId, predictedWinner')
     .in('matchId', matchIds);
 
+  if (predError) {
+    console.error('[scoreUnscoredMatches] Error fetching predictions:', predError);
+    return 0;
+  }
+
+  console.log(`[scoreUnscoredMatches] Found ${allPredictions?.length || 0} predictions to score`);
+
   if (!allPredictions || allPredictions.length === 0) {
     // No predictions to score, just mark matches as scored
+    console.log('[scoreUnscoredMatches] No predictions found, marking matches as scored');
     for (const match of matchesToScore) {
       await supabase
         .from('Match')
@@ -221,7 +247,9 @@ async function scoreUnscoredMatches(supabase: any): Promise<number> {
   }
 
   // Batch update predictions with their points and results
+  console.log(`[scoreUnscoredMatches] Updating ${predictionsToUpdate.length} predictions with points`);
   for (const pred of predictionsToUpdate) {
+    console.log(`[scoreUnscoredMatches] Updating prediction ${pred.id}: ${pred.points} points (${pred.result})`);
     await supabase
       .from('Prediction')
       .update({ 
@@ -233,6 +261,7 @@ async function scoreUnscoredMatches(supabase: any): Promise<number> {
   }
 
   // Mark all matches as scored
+  console.log(`[scoreUnscoredMatches] Marking ${matchesToScore.length} matches as scored`);
   for (const match of matchesToScore) {
     await supabase
       .from('Match')
@@ -241,6 +270,7 @@ async function scoreUnscoredMatches(supabase: any): Promise<number> {
   }
 
   // Update membership totals
+  console.log('[scoreUnscoredMatches] Recalculating membership totals');
   await recalculateMembershipTotals(supabase);
 
   return matchesToScore.length;
