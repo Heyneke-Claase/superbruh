@@ -169,20 +169,22 @@ export async function getMatchInfo(matchId: string) {
     // If the match has ended, persist the result to the DB immediately so the
     // leaderboard and all-picks pages reflect it on their next render — without
     // waiting for the cron job to run.
-    if (data.data?.matchEnded) {
-      const d = data.data;
-
+    const d = data.data;
+    const status = d.status || '';
+    const isMatchEnded = d.matchEnded || status.includes(' won by ') || status.toLowerCase().includes('super over');
+    
+    if (isMatchEnded) {
       // Derive winner from the explicit field or parse from status string
       let winner: string | null = d.winner || null;
-      if (!winner && d.status?.includes(' won by ')) {
-        winner = d.status.split(' won by ')[0].trim();
+      if (!winner && status.includes(' won by ')) {
+        winner = status.split(' won by ')[0].trim();
       }
 
       // Embed margin category into status string if not already there
-      let status: string = d.status || '';
-      if (status && !status.match(/\((Narrow|Comfortable|Easy|Thrashing)\)/i)) {
-        const margin = getActualMargin(status);
-        if (margin) status = `${status} (${margin})`;
+      let finalStatus: string = status;
+      if (finalStatus && !finalStatus.match(/\((Narrow|Comfortable|Easy|Thrashing)\)/i)) {
+        const margin = getActualMargin(finalStatus);
+        if (margin) finalStatus = `${finalStatus} (${margin})`;
       }
 
       const supabase = await createClient();
@@ -191,7 +193,7 @@ export async function getMatchInfo(matchId: string) {
       const update: Record<string, unknown> = {
         matchEnded: true,
         matchStarted: true,
-        status,
+        status: finalStatus,
       };
       if (winner) update.winner = winner;
       if (d.score) update.score = d.score;
