@@ -198,8 +198,9 @@ export async function getMatchInfo(matchId: string) {
 
       await supabase.from('Match').update(update).eq('id', matchId);
 
-      // Revalidate all league pages so the next render picks up the new data
-      revalidatePath('/leagues', 'layout');
+      await updatePoints();
+
+      revalidatePath('/leagues');
     }
 
     return data;
@@ -244,5 +245,5 @@ export async function forceSync() {
 
   // Only allow authenticated users to trigger a manual sync
   await syncMatches();
-  revalidatePath('/leagues', 'layout');
+  revalidatePath('/leagues');
 }
