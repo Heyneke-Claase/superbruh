@@ -2,26 +2,27 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { forceSync } from '@/app/actions';
+import { triggerSyncAndScore } from '@/app/actions';
 
 interface Props {
   /** ISO date strings of unresolved matches — used to detect live windows */
   matchTimes: string[];
 }
 
-const RATE_LIMIT_MS = 10 * 60 * 1000; // fire at most once per 10 minutes
+const RATE_LIMIT_MS = 5 * 60 * 1000; // fire at most once per 5 minutes (more frequent for scoring)
 const STORAGE_KEY = 'lastAutoSync';
 
 /**
- * Silently calls forceSync() (a Server Action) when any match is currently
+ * Silently calls triggerSyncAndScore() (a Server Action) when any match is currently
  * live — within a 2–5 hour window of its scheduled kick-off.
  *
- * This ensures the DB is updated automatically without waiting for the
- * Vercel cron, which on the free tier only fires once per day regardless
- * of the configured schedule.
+ * This ensures matches are synced AND scored automatically without waiting for the
+ * Vercel cron. The new syncAndScore function is idempotent - it won't double-score.
  *
- * Rate-limited to once per 10 minutes via localStorage so multiple users
+ * Rate-limited to once per 5 minutes via localStorage so multiple users
  * with the page open don't all trigger it simultaneously.
+ * 
+ * When matches are scored, the page will refresh to show updated points.
  */
 export default function AutoSync({ matchTimes }: Props) {
   const router = useRouter();
@@ -44,10 +45,17 @@ export default function AutoSync({ matchTimes }: Props) {
 
     localStorage.setItem(STORAGE_KEY, String(now));
 
-    // forceSync is a Server Action — it calls syncMatches() and revalidates
-    // the cache. After it resolves, trigger a soft refresh to show new data.
-    forceSync().then(() => {
-      router.refresh();
+    // triggerSyncAndScore is a Server Action — it calls syncAndScore() which:
+    // 1. Syncs matches from API
+    // 2. Scores any newly completed matches (idempotent)
+    // 3. Updates individual pick points
+    // 4. Recalculates membership totals
+    // After it resolves, trigger a soft refresh to show new data.
+    triggerSyncAndScore().then((result) => {
+      if (result.success && result.scored && result.scored > 0) {
+        // Only refresh if we actually scored some matches
+        router.refresh();
+      }
     }).catch(() => {
       // Non-fatal — LiveRefresh will catch it on the next 30s tick
     });

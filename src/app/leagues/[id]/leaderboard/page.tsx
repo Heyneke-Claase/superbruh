@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { getActualMargin } from '@/lib/matchService';
+import { getActualMargin, syncAndScore } from '@/lib/matchService';
 import LiveRefresh from '@/components/LiveRefresh';
 import AutoSync from '@/components/AutoSync';
 
@@ -11,6 +11,15 @@ export const dynamic = 'force-dynamic';
 export default async function LeaderboardPage({ params }: { params: Promise<{ id: string }> | any }) {
   const { id } = await params;
   const supabase = await createClient();
+
+  // Trigger sync and score FIRST - this ensures any completed matches are scored
+  // before we display the leaderboard. This is idempotent so it's safe to call on every load.
+  try {
+    await syncAndScore();
+  } catch (e) {
+    // Non-fatal - continue loading page even if sync fails
+    console.error('Background sync failed:', e);
+  }
 
   const { data: league } = await supabase
     .from('League')

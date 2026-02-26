@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { updatePoints, syncMatches, getActualMargin } from '@/lib/matchService';
+import { updatePoints, syncMatches, getActualMargin, syncAndScore } from '@/lib/matchService';
 
 async function getUserId() {
   const supabase = await createClient();
@@ -247,7 +247,30 @@ export async function forceSync() {
   if (!userId) return;
 
   // Only allow authenticated users to trigger a manual sync
-  await syncMatches();
+  // Using the new syncAndScore which handles both syncing and scoring
+  await syncAndScore();
   revalidatePath('/leagues');
   revalidatePath('/leagues/*');
+}
+
+/**
+ * Trigger sync and score for the current user
+ * This is called by the AutoSync component and page loads
+ * to ensure matches are scored before showing results
+ */
+export async function triggerSyncAndScore(): Promise<{ success: boolean; scored?: number }> {
+  const userId = await getUserId();
+  if (!userId) return { success: false };
+
+  try {
+    const result = await syncAndScore();
+    revalidatePath('/leagues');
+    revalidatePath('/leagues/[id]');
+    revalidatePath('/leagues/[id]/picks');
+    revalidatePath('/leagues/[id]/leaderboard');
+    return { success: true, scored: result.scored };
+  } catch (error) {
+    console.error('Trigger sync and score error:', error);
+    return { success: false };
+  }
 }

@@ -10,7 +10,7 @@ import MatchInfo from '@/components/MatchInfo';
 import RemoveMemberButton from '@/components/RemoveMemberButton';
 import DeleteLeagueButton from '@/components/DeleteLeagueButton';
 import ForceSyncButton from '@/components/ForceSyncButton';
-import { getActualMargin } from '@/lib/matchService';
+import { getActualMargin, syncAndScore } from '@/lib/matchService';
 import AutoSync from '@/components/AutoSync';
 
 export const dynamic = 'force-dynamic';
@@ -18,6 +18,15 @@ export const dynamic = 'force-dynamic';
 export default async function LeagueDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
+
+  // Trigger sync and score FIRST - this ensures any completed matches are scored
+  // This is idempotent so it's safe to call on every page load
+  try {
+    await syncAndScore();
+  } catch (e) {
+    // Non-fatal - continue loading page even if sync fails
+    console.error('Background sync failed:', e);
+  }
 
   // Run auth + league fetch in parallel
   const [{ data: { user } }, { data: league }] = await Promise.all([

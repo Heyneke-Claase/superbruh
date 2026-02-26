@@ -1,8 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/sync",
-      "schedule": "*/30 * * * *"
+      "path": "/api/sync-and-score",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
