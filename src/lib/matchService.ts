@@ -3,7 +3,7 @@ import { getActualMargin } from './utils';
 
 export { getActualMargin };
 
-const API_KEY = 'a8f16eab-0f85-45c8-8477-10de77bb60d1';
+const API_KEY = '059430bf-55f4-402b-9984-883c3d68d2bc';
 const SERIES_ID = 'd7dcef2e-6391-4039-b7b1-15fd3e354432';
 const API_URL = `https://api.cricapi.com/v1/series_info?apikey=${API_KEY}&id=${SERIES_ID}`;
 

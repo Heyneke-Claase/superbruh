@@ -5,6 +5,9 @@
 -- This tracks when a match was last scored (null = not scored yet)
 ALTER TABLE "Match" ADD COLUMN IF NOT EXISTS "scoredAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL;
 
+-- Add score column to Match table (stores match score data from API)
+ALTER TABLE "Match" ADD COLUMN IF NOT EXISTS "score" JSONB DEFAULT NULL;
+
 -- Add index for efficient querying of unscored matches
 CREATE INDEX IF NOT EXISTS "idx_match_scored_at" ON "Match"("scoredAt") WHERE "matchEnded" = true;
 
@@ -20,6 +23,7 @@ CREATE INDEX IF NOT EXISTS "idx_prediction_points" ON "Prediction"("points") WHE
 
 -- Add comment explaining the scoring system
 COMMENT ON COLUMN "Match"."scoredAt" IS 'Timestamp when match was scored (null = not scored yet). Used for idempotent scoring.';
+COMMENT ON COLUMN "Match"."score" IS 'Match score data from API (JSONB)';
 COMMENT ON COLUMN "Prediction"."points" IS 'Points earned for this prediction (0-2: 0=incorrect, 1=correct team, 2=correct margin)';
 COMMENT ON COLUMN "Prediction"."result" IS 'Result classification: incorrect, correct_team, correct_margin';
 COMMENT ON COLUMN "Prediction"."scoredAt" IS 'Timestamp when this prediction was scored';
