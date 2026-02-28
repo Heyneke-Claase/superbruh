@@ -6,4 +6,5 @@
   NODE_VERSION = "20"
 
 # NOTE: Netlify free tier doesn't support scheduled functions (cron jobs).
-# Use an external free cron service (cron-job.org) to ping /api/sync-and-score every 15 minutes.
+# Use an external free cron service (cron-job.org) to ping /api/sync-and-score every 20 minutes.
+# This uses 72 API calls/day (3/hour × 24 hours), leaving 28 calls for manual syncs.
